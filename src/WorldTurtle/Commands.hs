@@ -6,25 +6,64 @@ module WorldTurtle.Commands
   , left
   , right
   , makeTurtle
+  , runTurtle
   ) where
 
 import WorldTurtle.Internal.Turtle
 import WorldTurtle.Internal.Commands
 import qualified WorldTurtle.Internal.Coords as P
 
+import Graphics.Gloss.Data.Color (white)
+import Graphics.Gloss.Data.Display (Display (..))
+import qualified Graphics.Gloss.Interface.Pure.Animate as G (animate)
 import Graphics.Gloss.Data.Picture
 
 import Control.Monad (when, void)
+import Control.Applicative (pure, liftA2)
+
+newtype TurtleCommand a = TurtleCommand 
+  { 
+    getSequence :: SequenceCommand (AlmostVal ()) a 
+  }
+
+instance Functor TurtleCommand where
+  fmap f (TurtleCommand a) = TurtleCommand $ fmap f a
+
+instance Applicative TurtleCommand where
+  pure a = TurtleCommand $ pure a
+  liftA2 f (TurtleCommand a) (TurtleCommand b) = TurtleCommand $ liftA2 f a b
+
+instance Monad TurtleCommand where
+  (TurtleCommand a) >>= f = TurtleCommand $ a >>= \s -> getSequence (f s)
+
+
+instance Semigroup a => Semigroup (TurtleCommand a) where
+  (TurtleCommand a) <> (TurtleCommand b) = 
+    TurtleCommand $ combineSequence a b
+
+{-
+combine :: TurtleCommand () () -> TurtleCommand () () -> TurtleCommand () ()
+combine (TurtleCommand a) (TurtleCommand b) = TurtleCommand $ combineSequence a b
+-}
 
 backward :: Turtle -> Float -> TurtleCommand ()
 backward turtle d = forward turtle (-d)
 
 forward :: Turtle -> Float -> TurtleCommand ()
-forward turtle d = do
+forward turtle d = TurtleCommand $ forward_ turtle d
+
+right :: Turtle -> Float -> TurtleCommand ()
+right t r = left t (-r)
+
+left :: Turtle -> Float -> TurtleCommand ()
+left t r = TurtleCommand $ left_ t r
+
+forward_ :: Turtle -> Float -> SequenceCommand (AlmostVal a) ()
+forward_ turtle d = do
     t <- turtleData turtle
     -- ^ Get origin point
     let speed = _speed t
-    void $ animate' d speed $ \ q -> do
+    animate' d speed $ \ q -> do
       let startP = _position t
       let heading = P.degToRad $ _heading t
       let vec = P.rotateV heading (d, 0)
@@ -40,15 +79,13 @@ forward turtle d = do
       updateTurtle turtle t'
       -- ^ Update the turtle to a new position
 
-right :: Turtle -> Float -> TurtleCommand ()
-right t r = right t (-r)
-
-left :: Turtle -> Float -> TurtleCommand ()
-left turtle r = do
+left_ :: Turtle -> Float -> SequenceCommand (AlmostVal a) ()
+left_ turtle r = do
     t <- turtleData turtle
-    let r' = normalizeHeading r
-    void $ animate' (r' * pi) (_speed t * 180) $ \q -> do
+    let r' = normalizeDirection r
+    animate' (r' * pi) (_speed t * 180) $ \q -> do
       let heading = _heading t
+      --let q' = if r > 0 then q else -q
       let newHeading = normalizeHeading $ heading + q * r'
       -- ^ Get new heading via percentage
       let t' = t { _heading = newHeading }
@@ -63,24 +100,18 @@ normalizeHeading f
   | otherwise = f
   where r = 360.0
 
-animate' :: Float -> Float -> (Float -> TurtleCommand a) -> TurtleCommand a
-animate' distance speed callback =
-   let duration = distance / speed
-       d' = if isNaN duration || isInfinite duration then 0 else duration
-       -- ^ if speed is 0 we use this as a "no animation" command from 
-       --   user-space.
-     in animate d' callback
+  -- | Return a valid heading value between (-180, 180).
+normalizeDirection :: Float -> Float
+normalizeDirection f
+  | f < -r     = normalizeHeading (f + r)
+  | f >  r     = normalizeHeading (f - r)
+  | otherwise = f
+  where r = 180
 
-animate :: Float -> (Float -> TurtleCommand a) -> TurtleCommand a
-animate duration callback = do
-   timeRemaining <- simTime -- simulation time to go
-   let availableTime = min timeRemaining duration
-   -- ^ Amount of time we have to complete the animation before we need to exit.
-   let timeQuotient = if availableTime == 0 then 1 else availableTime / duration
-   -- ^ quotient of available time vs required time. Note that when the duration
-   --   is 0 we say "don't do any animation"
-   t <- callback timeQuotient 
-   -- ^ Perform the calculation with the quotient for lerping
-   decrementSimTime availableTime 
-   -- ^ Test to see if this is the end of our animation and if so exit early
-   return t
+makeTurtle :: TurtleCommand Turtle
+makeTurtle = TurtleCommand generateTurtle
+
+runTurtle :: TurtleCommand () -> IO ()
+runTurtle tc = G.animate display white iterate
+     where display = InWindow "World Turtle" (800, 600) (400, 300)
+           iterate f = renderTurtle (getSequence tc) f
