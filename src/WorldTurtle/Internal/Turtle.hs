@@ -1,6 +1,7 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# OPTIONS_HADDOCK hide #-}
 module WorldTurtle.Internal.Turtle
-  ( TurtleData (..)
+  ( TurtleData
   , defaultTurtle
   , drawTurtle
   , heading
@@ -8,8 +9,11 @@ module WorldTurtle.Internal.Turtle
   , representation
   , penDown
   , speed
+  , WorldTurtle.Internal.Turtle.scale
+  , penColor
   ) where
 
+import Control.Lens
 import Control.Lens.TH
 
 import Graphics.Gloss.Data.Color
@@ -25,7 +29,10 @@ data TurtleData = TurtleData
     , _penDown :: Bool
     , _speed :: Float
     , _scale :: Float
+    , _penColor :: Color
     }
+
+$(makeLenses ''TurtleData)
 
 defaultTurtle :: TurtleData
 defaultTurtle = TurtleData
@@ -33,17 +40,18 @@ defaultTurtle = TurtleData
     , _position = (0, 0)
     , _representation = defaultTurtlePolygon
     , _penDown = True
-    , _speed = 20
+    , _speed = 30
     , _scale = 1
+    , _penColor = black
     }
 
 drawTurtle :: TurtleData -> Picture
 drawTurtle t = let (x, y) = _position t
                    s = _scale t
                 in translate x y 
-                 $ rotate (90 - _heading t)
+                 $ rotate (90 - t ^. heading)
                  $ G.scale s s
-                 $ (_representation t)
+                 $ (t ^. representation)
 
 defaultTurtlePolygon :: Picture
 defaultTurtlePolygon = translate (-4) (-2) $ pictures [outline black, fill blue]
@@ -57,5 +65,3 @@ fill c = color c $ pictures
                  , polygon [(4, 2), (8, 0), (7, 2)] -- right tail
                  , polygon [(1, 2), (7, 2), (4, 8)] -- main triangle
                  ]
-
-$(makeLenses ''TurtleData)
