@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 68c9678f7e69c696c5f7f571b92eb2e049836156c56e0be7c25b0623bc73a9a9
+-- hash: 175b28eed9ef75faf729898f8884a908abf3288480bc3ffab95904398ebf4219
 
 name:           turtle-haskell
 version:        0.1.0.0
@@ -32,6 +32,7 @@ library
       WorldTurtle.Internal.Commands
       WorldTurtle.Internal.Coords
       WorldTurtle.Internal.Turtle
+      WorldTurtle.Shapes
   other-modules:
       Paths_turtle_haskell
   hs-source-dirs:

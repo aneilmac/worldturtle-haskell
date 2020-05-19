@@ -189,8 +189,6 @@ combineSequence a b = do
   let (Just bVal') = bVal
   return $ aVal' <> bVal'
 
--- | TODO, this should run A then return on success -- OTHERWISE B? What does
---   ALTERNATIVE mean in animation land?
 -- | Runs two items in sequence, returns the result of `a` if `a` passes,
 --   otherwise returns the results of `b`. The implication of this is that only
 --   the result of a will be returned while animating, and b when animation is
@@ -218,33 +216,27 @@ runParallel :: SequenceCommand c a -- ^ Sequence @a@ to run.
 runParallel a b = do
   startSimTime <- use totalSimTime
   parentExitCall <- use exitCall
-  predecessorPics <- use pics
 
   -- Run A, and return back to this point when/if it fails.
   aVal <- callCC $ \ exitFromA -> do
     exitCall .= exitFromA Nothing
-    pics .= []
     Just <$> a
 
   aSimTime <- use totalSimTime
-  aPics <- use pics
   
   -- Run B, and return back to this point when/if it fails.
   bVal <- callCC $ \ exitFromB -> do
     exitCall .= exitFromB Nothing
-    pics .= []
     totalSimTime .= startSimTime -- restart sim time back to initial.
     Just <$> b
 
   bSimTime <- use totalSimTime
-  bPics <- use pics
 
   -- No subsequent animation can proceed until the longest animation completes.
   -- We take the remaining animation time to the remaining time of the longest 
   -- running animation.
   totalSimTime .= min aSimTime bSimTime
 
-  pics .= predecessorPics ++ aPics ++ bPics
   exitCall .= parentExitCall  -- Let us exit properly again!
 
   -- Now we must test the remaining sim time. The above calls might have

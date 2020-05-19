@@ -19,6 +19,7 @@ module WorldTurtle.Commands
   -- Building a turtle.
   , Turtle
   , makeTurtle
+  , makeTurtle'
   -- * Movement commands.
   , P.Point
   , forward
@@ -43,16 +44,20 @@ module WorldTurtle.Commands
   , speed
   , penColor
   , penDown
+  , visible
   -- * Drawing state.
   , setPenColor
   , setPenDown
   , setRepresentation
+  , setVisible
   -- * Canvas commands.
   , clear
   ) where
 
-import qualified WorldTurtle.Internal.Turtle as T
+import WorldTurtle.Shapes
+
 import WorldTurtle.Internal.Commands
+import qualified WorldTurtle.Internal.Turtle as T
 import qualified WorldTurtle.Internal.Coords as P
 
 import Graphics.Gloss.Data.Color (Color, white, black)
@@ -110,9 +115,38 @@ manipulated! For example, to create a turtle and then move the turtle forward:
       t <- makeTurtle
       forward t 90
    @
+
+The default turtle starts at position (0, 0) and is orientated @North@.
+
 -}
 makeTurtle :: TurtleCommand Turtle
 makeTurtle = TurtleCommand generateTurtle
+
+{-| This variant of `makeTurtle` takes a starting position, a starting 
+    orientation, and a color to apply to the turtle and the turtle's pen.
+
+    @
+      myCommand :: TurtleCommand ()
+      myCommand = do
+        t1 <- makeTurtle' (0, 0)  0 green
+        t2 <- makeTurtle' (0, 0) 90 red
+        forward t1 90 \<|\> forward t2 90
+    @
+
+    See `makeTurtle`.
+-}
+makeTurtle' :: Point -- ^ Initial position of the turtle.
+            -> Float -- ^ Initial heading of the turtle.
+            -> Color -- ^ Color of the turtle and the turtle's pen.
+            -> TurtleCommand Turtle -- ^ The generated turtle.
+makeTurtle' p f c = TurtleCommand $ do 
+  turtle <- generateTurtle
+  let ts = turtLens_ turtle
+  ts . T.position       .= p
+  ts . T.heading        .= f
+  ts . T.representation .= turtleArrow black c
+  ts . T.penColor       .= c
+  return turtle
 
 -- | This is the heart of the turtle system. When run, this command will draw
 -- canvas and start animating the given `TurtleCommand`.
@@ -199,28 +233,32 @@ circle turtle radius r = TurtleCommand $ do
   t <- tData_ turtle
   let r' = P.normalizeHeading r
   animate' (radius * P.degToRad r') (t ^. T.speed) $ \q -> do
-    let startAngle = t ^. T.heading
+    let startAngle = t ^. T.heading + 90
     let p = t ^. T.position
     let angle = r' * q
     when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
+      let st = if radius > 0 then startAngle else startAngle
       let lPic  = translate (fst p) (snd p)
-                $ rotate (90 - startAngle)
+                $ rotate (180 - st)
                 $ translate (-radius) 0
                 $ color (t ^. T.penColor)
-                $ arc 0 angle radius
+                $ rotate (if radius >= 0 then 0 else 180)
+                $ arc 0 (angle) radius
       addPicture lPic
 
-    let cS = cos $ P.degToRad $ 90 - startAngle
-    let sS = sin $ P.degToRad $ 90 - startAngle
-    let cA = cos $ P.degToRad $ (90 - startAngle - angle)
-    let sA = sin $ P.degToRad $ (90 - startAngle - angle)
-    let rx =   radius * (cA - cS) + fst p
-    let ry = -(radius * (sA - sS) + snd p)
+    let s = P.degToRad $ startAngle
+    let a = P.degToRad $ angle + startAngle
+    let cS = cos s
+    let sS = sin s
+    let cA = cos a
+    let sA = sin a
+    let rx = fst p - (radius * (cA - cS))
+    let ry = snd p - (radius * (sA - sS))
 
     -- Update the turtle with the new values.
     let ts = turtLens_ turtle
-    ts . T.heading .= startAngle + angle
-    ts . T.position .= (rx, ry)
+    ts . T.heading .= (P.normalizeHeading $ startAngle - 90 + angle)
+    ts . T.position .= (rx , ry)
 
 -- | Returns the turtle's current position.
 --   Default (starting) position is @(0, 0)@.
@@ -285,12 +323,25 @@ penDown :: Turtle -- ^ Turtle to query.
          -> TurtleCommand Bool -- ^ True if pen is down, false if not.
 penDown = getter_ False T.penDown
 
--- | Sets the turtle's pen is down.
+-- | Sets the turtle's pen to down or up.
 --   See `penDown`.
 setPenDown :: Turtle -- ^ Turtle to modify.
-           -> Bool -- ^ New state for pen flag.
+           -> Bool -- ^ New state for pen flag. True for down. False for up.
            -> TurtleCommand ()
 setPenDown = setter_ T.penDown
+
+-- | Returns whether the turtle is visible.
+--   The default value is @true@.
+visible :: Turtle -- ^ Turtle to query.
+         -> TurtleCommand Bool -- ^ True if turtle is visible,false if not.
+visible = getter_ False T.visible
+
+-- | Sets the turtle's visibility.
+--   See `visible`.
+setVisible :: Turtle -- ^ Turtle to modify.
+           -> Bool -- ^ New state for visible flag.
+           -> TurtleCommand ()
+setVisible = setter_ T.visible
 
 -- | Returns whether the turtle's current speed.
 --   Speed is is @distance@ per second.

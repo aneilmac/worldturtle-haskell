@@ -11,10 +11,13 @@ module WorldTurtle.Internal.Turtle
   , speed
   , WorldTurtle.Internal.Turtle.scale
   , penColor
+  , visible
   ) where
 
 import Control.Lens
 import Control.Lens.TH
+
+import WorldTurtle.Shapes
 
 import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Data.Picture
@@ -30,6 +33,7 @@ data TurtleData = TurtleData
     , _speed :: Float
     , _scale :: Float
     , _penColor :: Color
+    , _visible :: Bool
     }
 
 $(makeLenses ''TurtleData)
@@ -38,30 +42,20 @@ defaultTurtle :: TurtleData
 defaultTurtle = TurtleData
     { _heading = 90
     , _position = (0, 0)
-    , _representation = defaultTurtlePolygon
+    , _representation = turtleArrow black blue
     , _penDown = True
-    , _speed = 30
+    , _speed = 100
     , _scale = 1
     , _penColor = black
+    , _visible = True
     }
 
 drawTurtle :: TurtleData -> Picture
-drawTurtle t = let (x, y) = _position t
-                   s = _scale t
-                in translate x y 
-                 $ rotate (90 - t ^. heading)
-                 $ G.scale s s
-                 $ (t ^. representation)
-
-defaultTurtlePolygon :: Picture
-defaultTurtlePolygon = translate (-4) (-2) $ pictures [outline black, fill blue]
-
-outline :: Color -> Picture
-outline c = color c $ lineLoop [(0,0), (4, 2), (8, 0), (4, 8)]
-
-fill :: Color -> Picture
-fill c = color c $ pictures 
-                 [ polygon [(0, 0), (4, 2), (1, 2)] -- left tail
-                 , polygon [(4, 2), (8, 0), (7, 2)] -- right tail
-                 , polygon [(1, 2), (7, 2), (4, 8)] -- main triangle
-                 ]
+drawTurtle t
+  | t ^. visible  == False = blank
+  | otherwise = let (x, y) = _position t
+                    s = _scale t
+                 in translate x y 
+                  $ rotate (360 - t ^. heading)
+                  $ G.scale s s
+                  $ (t ^. representation)
