@@ -16,6 +16,8 @@ module WorldTurtle.Internal.Commands
   , animate'
   , animate
   , combineSequence
+  , alternateSequence
+  , failSequence
   ) where
 
 import WorldTurtle.Internal.Turtle
@@ -28,8 +30,9 @@ import Control.Monad.State
 import Control.Lens
 import Control.Lens.TH
 
+import Data.Void (Void, absurd)
 import Data.Semigroup ((<>))
-import Data.Maybe (Maybe, isNothing)
+import Data.Maybe (Maybe, isNothing, isJust)
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -93,8 +96,7 @@ setSimTime :: Float -> SequenceCommand b ()
 setSimTime newTime = do
   let newTime' = max 0 newTime
   totalSimTime .= newTime'
-  ex <- use exitCall
-  when (newTime' <= 0) $ void ex
+  when (newTime' <= 0) failSequence
 
 -- | Takes a value away form the current sim time and store the updated time.
 -- See `setSimTime`.
@@ -168,14 +170,52 @@ animate duration callback = do
    --  Test to see if this is the end of our animation and if so exit early
    return t
 
--- | Given two sequences @a@ and @b@, instead of running them both as separate 
---   animations, run them both in parallel!
+-- | Runs two items in parallel then applies a semigroup combination operator
+--   to the result of both.
+--   This combination can only return if both A and B return. Compare to 
+--   `alternateSequence` which can return if one returns.
 combineSequence :: Semigroup a
-                => SequenceCommand (AlmostVal b) a -- ^ Sequence @a@ to run.
-                -> SequenceCommand (AlmostVal b) a -- ^ Sequence @b@ to run.
-                -> SequenceCommand (AlmostVal b) a 
+                => SequenceCommand b a -- ^ Sequence @a@ to run.
+                -> SequenceCommand b a -- ^ Sequence @b@ to run.
+                -> SequenceCommand b a 
                     -- ^ New sequence of A and B in parallel.
 combineSequence a b = do
+  (aVal, bVal) <- runParallel a b
+  -- If either attempt failed, we fail also.
+  when (isNothing aVal || isNothing bVal) failSequence
+
+  -- Everything is hunky dory so we continue on into the next bind of the monad.
+  let (Just aVal') = aVal
+  let (Just bVal') = bVal
+  return $ aVal' <> bVal'
+
+-- | TODO, this should run A then return on success -- OTHERWISE B? What does
+--   ALTERNATIVE mean in animation land?
+-- | Runs two items in sequence, returns the result of `a` if `a` passes,
+--   otherwise returns the results of `b`. The implication of this is that only
+--   the result of a will be returned while animating, and b when animation is
+--   finished.
+alternateSequence :: SequenceCommand b a -- ^ Sequence @a@ to run.
+                  -> SequenceCommand b a -- ^ Sequence @b@ to run.
+                  -> SequenceCommand b a
+alternateSequence a b = do
+  (aVal, bVal) <- runParallel a b
+  
+  -- If both values failed we fail also.
+  when (isNothing aVal && isNothing bVal) failSequence
+
+  -- If A passes, return the value of A, otherwise return the value of B.
+  if isJust aVal 
+    then let (Just aVal') = aVal in return aVal'
+    else let (Just bVal') = bVal in return bVal'
+
+-- | Given two sequences @a@ and @b@, instead of running them both as separate 
+--   animations, run them both in parallel!
+runParallel :: SequenceCommand c a -- ^ Sequence @a@ to run.
+            -> SequenceCommand c b -- ^ Sequence @b@ to run.
+            -> SequenceCommand c (AlmostVal a, AlmostVal b)
+               -- ^ New sequence of A and B which returns both results.
+runParallel a b = do
   startSimTime <- use totalSimTime
   parentExitCall <- use exitCall
   predecessorPics <- use pics
@@ -207,18 +247,20 @@ combineSequence a b = do
   pics .= predecessorPics ++ aPics ++ bPics
   exitCall .= parentExitCall  -- Let us exit properly again!
 
-  -- If either attempt failed, we fail also.
-  when (isNothing aVal || isNothing bVal) $ do
-    ex <- use exitCall
-    void ex
-
   -- Now we must test the remaining sim time. The above calls might have
   -- succeeded while still exhausting our remaining time -- which as far as
   -- animating is concerned is the same as not succeeding at all!
   decrementSimTime 0
 
-  -- Everything is hunky dory so we continue on into the next bind of the monad.
-  let (Just aVal') = aVal
-  let (Just bVal') = bVal
-  return $ aVal' <> bVal'
-  
+  return (aVal, bVal)
+
+-- | Calls our early exit and fails the callback. No calculations will be
+--   performed beyond this call.
+failSequence :: SequenceCommand b a
+failSequence = do
+  ex <- use exitCall
+  ex
+  -- We can never reach this point with our call to `ex`. So the return type
+  -- can be whatever we want it to be. Let's go crazy! 
+  let (Just x) = (Nothing :: Maybe Void)
+   in absurd x

@@ -60,11 +60,9 @@ import Graphics.Gloss.Data.Display (Display (..))
 import qualified Graphics.Gloss.Interface.Pure.Animate as G (animate)
 import Graphics.Gloss.Data.Picture
 
-import Control.Monad (when, void)
-import Control.Applicative (pure, liftA2)
 import Control.Lens
-
-import Control.Monad.State
+import Control.Monad
+import Control.Applicative
 
 import Data.Maybe (fromMaybe)
 
@@ -86,9 +84,21 @@ instance Applicative TurtleCommand where
 instance Monad TurtleCommand where
   (TurtleCommand a) >>= f = TurtleCommand $ a >>= \s -> seqT (f s)
 
+instance Alternative TurtleCommand where
+  empty = TurtleCommand failSequence
+  (<|>) (TurtleCommand a) (TurtleCommand b) = 
+    TurtleCommand $ alternateSequence a b
+
 instance Semigroup a => Semigroup (TurtleCommand a) where
   (TurtleCommand a) <> (TurtleCommand b) = 
     TurtleCommand $ combineSequence a b
+    
+instance MonadPlus TurtleCommand
+
+instance MonadFail TurtleCommand where
+  fail t = TurtleCommand $ do
+    addPicture $ text t
+    failSequence
 
 {- |
 Creates a new `Turtle` and displays it on the canvas. This turtle can then be
