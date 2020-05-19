@@ -34,4 +34,4 @@ normalizeDirection f
   | f < -r     = normalizeHeading (f P.+ r)
   | f >  r     = normalizeHeading (f P.- r)
   | otherwise = f
-  where r = 180
+  where r = 180.0

@@ -1,107 +1,62 @@
 module Main where
 
 import WorldTurtle
+import qualified Graphics.Gloss.Data.Picture as G
+import Control.Monad
 
-drawSquare1 :: TurtleCommand ()
-drawSquare1 = do
+m :: Float -> TurtleCommand ()
+m d = do 
   t <- makeTurtle
-  --drawIt $ defaultTurtlePolygon
-  forward t 90
-  left t 90
-  stamp t
-  forward t 90
-  left t 90
-  forward t 90
-  left t 90
-  forward t 90
-
-drawSquare2 :: TurtleCommand ()
-drawSquare2 = do
-  t <- makeTurtle
-  left t 180
-  --drawIt $ defaultTurtlePolygon
-  forward t 90
-  left t 90
-  forward t 90
-  left t 90
-  forward t 90
-  left t 90
-  forward t 90
-
-
-m :: TurtleCommand ()
-m = do 
-  t <- makeTurtle
-  forward t 90
+  setSpeed t 130
+  right t $ 0 + d
   circle t 90 360
       
-n :: TurtleCommand() 
-n = do 
+n :: Float -> TurtleCommand() 
+n d = do 
   t <- makeTurtle
-  setPenColor t yellow
-  stamp t
-  right t 90
-  forward t 90
-  stamp t
+  setSpeed t 130
+  setPenColor t red
+  right t $ 90 + d
   circle t 90 360
 
-q :: TurtleCommand ()
-q = do 
+q :: Float -> TurtleCommand() 
+q d = do 
   t <- makeTurtle
-  stamp t
-  right t 180
-  forward t 90
-  stamp t
+  setSpeed t 130
+  setPenColor t green
+  right t $ 180 + d
   circle t 90 360
 
-r :: TurtleCommand ()
-r = do 
+r :: Float -> TurtleCommand() 
+r d = do 
   t <- makeTurtle
-  stamp t
-  left t 90
-  forward t 90
-  stamp t
+  setSpeed t 130
+  setPenColor t blue
+  right t $ 270 + d
   circle t 90 360
 
-s :: TurtleCommand ()
-s = do 
-  t <- makeTurtle
-  stamp t
-  left t 45
-  forward t 90
-  stamp t
+loop :: Turtle -> Float -> TurtleCommand() 
+loop t d = do 
+  setSpeed t 500
+  right t d
   circle t 90 360
-
-t :: TurtleCommand ()
-t = do 
-  t <- makeTurtle
-  stamp t
-  setPenDown t False
-  right t 45
-  forward t 90
-  stamp t
-  circle t 90 360
-
-moveTurtle1 :: TurtleCommand ()
-moveTurtle1 = do
-  t1 <- makeTurtle
-  forward t1 90
-
-moveTurtle2 :: TurtleCommand ()
-moveTurtle2 = do
-  t2 <- makeTurtle
-  right t2 90
-  forward t2 360
-
-moveTurtle3 :: Float -> TurtleCommand ()
-moveTurtle3 f = do
-  t1 <- makeTurtle
-  left t1 180
-  forward t1 f
-  left t1 90
-  forward t1 90
-
 
 main :: IO ()
 main = runTurtle $ do
-   n <> m <> q <> r <> s <> t
+  t1 <- makeTurtle
+  setPenColor t1 blue
+  setHeading t1 90
+
+  t2 <- makeTurtle
+  setPenColor t2 red
+  setHeading t2 180
+
+  t3 <- makeTurtle
+  setPenColor t3 green
+  setHeading t3 270
+
+  t4 <- makeTurtle
+  setHeading t4 0
+
+  forM_ [0, 5 ..] $ 
+    \ v -> loop t1 v <> loop t2 v <> loop t3 v <> loop t4 v

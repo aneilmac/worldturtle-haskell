@@ -31,17 +31,24 @@ module WorldTurtle.Commands
   , rt
   , WorldTurtle.Commands.circle
   , goto
+  , setPosition
   , setHeading
+  , setSpeed
   -- * Styling commands.
   , stamp
+  , representation
   -- * Tell turtle's state.
   , position
   , heading
+  , speed
   , penColor
   , penDown
   -- * Drawing state.
   , setPenColor
   , setPenDown
+  , setRepresentation
+  -- * Canvas commands.
+  , clear
   ) where
 
 import qualified WorldTurtle.Internal.Turtle as T
@@ -181,27 +188,29 @@ circle  :: Turtle -- ^ Turtle to move in a circle.
 circle turtle radius r = TurtleCommand $ do
   t <- tData_ turtle
   let r' = P.normalizeHeading r
-  animate' (radius * P.degToRad r) (t ^. T.speed) $ \q -> do
-    let startAngle = P.normalizeHeading $ t ^. T.heading
+  animate' (radius * P.degToRad r') (t ^. T.speed) $ \q -> do
+    let startAngle = t ^. T.heading
+    let p = t ^. T.position
     let angle = r' * q
     when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
-      let p = t ^. T.position
       let lPic  = translate (fst p) (snd p)
                 $ rotate (90 - startAngle)
                 $ translate (-radius) 0
                 $ color (t ^. T.penColor)
                 $ arc 0 angle radius
       addPicture lPic
-    let pos  = P.mulSV radius (P.unitVectorAtAngle $ P.degToRad angle)
-               P.+  (-radius,  0)
-    let pos' = P.rotateV (P.degToRad $ 90 - startAngle) pos
-    let pos'' =  t ^. T.position P.+ pos' P.+ (radius,  0)
-              --P.- P.rotateV (P.degToRad $ startAngle - 90) (radius, 0)
+
+    let cS = cos $ P.degToRad $ 90 - startAngle
+    let sS = sin $ P.degToRad $ 90 - startAngle
+    let cA = cos $ P.degToRad $ (90 - startAngle - angle)
+    let sA = sin $ P.degToRad $ (90 - startAngle - angle)
+    let rx =   radius * (cA - cS) + fst p
+    let ry = -(radius * (sA - sS) + snd p)
 
     -- Update the turtle with the new values.
     let ts = turtLens_ turtle
     ts . T.heading .= startAngle + angle
-    ts . T.position .= pos''
+    ts . T.position .= (rx, ry)
 
 -- | Returns the turtle's current position.
 --   Default (starting) position is @(0, 0)@.
@@ -222,6 +231,9 @@ goto turtle point = TurtleCommand $ do
                         $ color (t ^. T.penColor) 
                         $ line [startP, point] 
   turtLens_ turtle . T.position .= point
+
+-- | Alias of `goto`.
+setPosition = goto
 
 -- | Returns the turtle's heading.
 --   
@@ -269,6 +281,50 @@ setPenDown :: Turtle -- ^ Turtle to modify.
            -> Bool -- ^ New state for pen flag.
            -> TurtleCommand ()
 setPenDown = setter_ T.penDown
+
+-- | Returns whether the turtle's current speed.
+--   Speed is is @distance@ per second.
+-- The default value is @TODO - DECIDE ON A DEFAULT VALUE@.
+speed :: Turtle -- ^ Turtle to query.
+      -> TurtleCommand Float
+speed = getter_ 0 T.speed
+
+-- | Sets the turtle's speed.
+--   See `speed`.
+setSpeed :: Turtle -- ^ Turtle to modify.
+         -> Float -- ^ New speed.
+         -> TurtleCommand ()
+setSpeed = setter_ T.speed
+
+-- | Gets the turtle's representation as a Gloss `Picture`.
+representation :: Turtle -- ^ Turtle to query.
+               -> TurtleCommand Picture
+representation = getter_ blank T.representation
+
+{- | Sets the turtle's representation to a Gloss `Picture`.
+   See `representation`.
+   For example, to set the turtle as a red circle:
+   
+   @
+    import WorldTurtle
+    import qualified Graphics.Gloss.Data.Picture as G
+
+    myCommand :: TurtleCommand ()
+    myCommand = do
+      t <- makeTurtle
+      setPenColor t red
+      setRepresentation t $ G.color red $ G.circleSolid 10
+      forward t 90
+   @
+-}
+setRepresentation :: Turtle -- ^ Turtle to mutate.
+                  -> Picture
+                  -> TurtleCommand ()
+setRepresentation = setter_ T.representation
+
+-- | Clears all drawings form the canvas. Does not alter any turtle's state.
+clear :: TurtleCommand ()
+clear = TurtleCommand $ pics .= []
 
 {-
    Here be dirty helper functions:
