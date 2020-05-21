@@ -29,9 +29,9 @@ main = runTurtle $ do
 ```
 
 Like so!
-
-![square example image](worldturtle-examples/square/Main.hs)
-
+ 
+<img src="worldturtle-examples/square/output.png" width="200" />
+ 
 ### Parallel animations
 
 Use of the Alternative operator `(<|>)` allows monadic animations to run in
@@ -66,9 +66,9 @@ stack exec parallel-circles-exe
 
 ## Future work (TODO)
 
-- [] Improve the docs as much as possible.
-- [] Animations.
-- [] Start the main goal: Tutorial series!
-- [] Fix the space leaks that are probably in there.
-- [] Stack templates.
-- [] Get this baby onto hackage.
+-[] Improve the docs as much as possible.
+-[] Animations.
+-[] Start the main goal: Tutorial series!
+-[] Fix the space leaks that are probably in there.
+-[] Stack templates.
+-[] Get this baby onto hackage.
