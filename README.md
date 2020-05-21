@@ -61,8 +61,8 @@ stack exec parallel-circles-exe
 |---------|--------|
 | [square](worldturtle-examples/square/Main.hs) | ![square image](worldturtle-examples/square/output.png) |
 | [spiralstar](worldturtle-examples/spiralstar/Main.hs) | ![spiralstar image](worldturtle-examples/spiralstar/output.png) |
-| [star](worldturtle-examples/star/Main.hs) | ![star image](orldturtle-examples/star/output.png) |
-| [parallelcircles](worldturtle-examples/parallelcircles/Main.hs) | ![parallelcircles image](orldturtle-examples/parallelcircles/output.png) |
+| [star](worldturtle-examples/star/Main.hs) | ![star image](worldturtle-examples/star/output.png) |
+| [parallelcircles](worldturtle-examples/parallelcircles/Main.hs) | ![parallelcircles image](worldturtle-examples/parallelcircles/output.png) |
 
 ## Future work (TODO)
 
