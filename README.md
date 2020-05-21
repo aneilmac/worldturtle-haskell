@@ -63,6 +63,7 @@ stack exec parallel-circles-exe
 | [spiralstar](worldturtle-examples/spiralstar/Main.hs) |<img src="worldturtle-examples/spiralstar/output.png" width="300" /> |
 | [star](worldturtle-examples/star/Main.hs) | <img src="worldturtle-examples/star/output.png" width="300"/> |
 | [parallelcircles](worldturtle-examples/parallelcircles/Main.hs) | <img src="worldturtle-examples/parallelcircles/output.png" width="300"/> |
+| [branch](worldturtle-examples/branch/Main.hs) | <img src="worldturtle-examples/branch/output.png" width="300"/> |
 
 ## Future work (TODO)
 
