@@ -1,4 +1,5 @@
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE BangPatterns #-}
 {-|
 Module      : Graphics.WorldTurtle.Commands
 Description : The commands used 
@@ -183,7 +184,7 @@ isPauseKey_ _ = False
 
 runTurtle :: TurtleCommand () -- ^ Command sequence to execute
           -> IO ()
-runTurtle tc = G.play display white 100 world iterateRender input timePass
+runTurtle tc = G.play display white 30 world iterateRender input timePass
      where display = InWindow "World Turtle" (800, 600) (400, 300)
            world = World 0 True 
                             $ G.viewStateInitWithConfig 
@@ -238,10 +239,10 @@ forward d turtle = TurtleCommand $ do
     t <- tData_ turtle
     --  Get origin point
     animate' d (t ^. T.speed) $ \ q -> do
-      let startP = t ^. T.position
-      let vec = P.rotateV (P.degToRad $ t ^. T.heading) (d, 0)
-      let endP = vec P.+ startP
-      let midP = P.lerp q startP endP
+      let !startP = t ^. T.position
+      let !vec = P.rotateV (P.degToRad $ t ^. T.heading) (d, 0)
+      let !endP = vec P.+ startP
+      let !midP = P.lerp q startP endP
       --  Get new endpoint via percentage
       when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
         addPicture $ color (t ^. T.penColor) 
@@ -268,9 +269,9 @@ left r turtle = TurtleCommand $ do
     t <- tData_ turtle
     let r' = P.normalizeDirection r
     animate' (P.degToRad r') (t ^. T.speed) $ \q -> do
-      let h = t ^. T.heading
+      let !h = t ^. T.heading
       --let q' = if r > 0 then q else -q
-      let newHeading = P.normalizeHeading $ h + q * r'
+      let !newHeading = P.normalizeHeading $ h + q * r'
       --  Get new heading via percentage
       turtLens_ turtle . T.heading .= newHeading
 
@@ -288,9 +289,9 @@ circle radius r turtle = TurtleCommand $ do
   t <- tData_ turtle
   let r' = P.normalizeHeading r
   animate' (radius * P.degToRad r') (t ^. T.speed) $ \q -> do
-    let startAngle = t ^. T.heading + 90
-    let p = t ^. T.position
-    let angle = r' * q
+    let !startAngle = t ^. T.heading + 90
+    let !p = t ^. T.position
+    let !angle = r' * q
     when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
       let lPic  = translate (fst p) (snd p)
                 $ rotate (180 - startAngle)
@@ -300,14 +301,14 @@ circle radius r turtle = TurtleCommand $ do
                 $ thickArc 0 (angle) radius (t ^. T.penSize)
       addPicture lPic
 
-    let s = P.degToRad $ startAngle
-    let a = P.degToRad $ angle + startAngle
-    let cS = cos s
-    let sS = sin s
-    let cA = cos a
-    let sA = sin a
-    let rx = fst p - (radius * (cA - cS))
-    let ry = snd p - (radius * (sA - sS))
+    let !s = P.degToRad $ startAngle
+    let !a = P.degToRad $ angle + startAngle
+    let !cS = cos s
+    let !sS = sin s
+    let !cA = cos a
+    let !sA = sin a
+    let !rx = fst p - (radius * (cA - cS))
+    let !ry = snd p - (radius * (sA - sS))
 
     -- Update the turtle with the new values.
     let ts = turtLens_ turtle

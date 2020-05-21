@@ -121,6 +121,7 @@ exitCondition :: SequenceCommand (AlmostVal a) a -- ^ Animation passed in.
               -> SequenceCommand (AlmostVal a) (AlmostVal a)
 exitCondition commands = callCC $ \exit -> do
     exitCall .= exit Nothing
+    decrementSimTime 0 -- In case we are already at a time of 0.
     Just <$> commands
 
 processTurtle :: SequenceCommand (AlmostVal a) a 
