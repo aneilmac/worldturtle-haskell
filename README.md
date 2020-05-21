@@ -37,7 +37,7 @@ Like so!
 ### Parallel animations
 
 Use of the Alternative operator `(<|>)` allows monadic animations to run in
-parallel as opposed to the default of in sequence. Here's our 
+parallel as opposed to the default of in sequence. Here the [parallel/serial comparison](worldturtle-examples/parallelserialcomparison/Main.hs) example shows a combination of sequenced and parallel animations.
 
 <img src="docs/images/parallel_serial_turtles.gif" width="400"/>
 
