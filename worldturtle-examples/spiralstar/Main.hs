@@ -4,7 +4,7 @@ import Control.Monad (forM_) -- Required control flow functions.
 
 import Graphics.Gloss.Data.Color
 
-import WorldTurtle
+import Graphics.WorldTurtle
 
 colors :: [Color]
 colors = [rose, violet, azure, aquamarine, chartreuse, orange]

@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_HADDOCK hide #-}
-module WorldTurtle.Internal.Turtle
+module Graphics.WorldTurtle.Internal.Turtle
   ( TurtleData
   , defaultTurtle
   , drawTurtle
@@ -9,7 +9,7 @@ module WorldTurtle.Internal.Turtle
   , representation
   , penDown
   , speed
-  , WorldTurtle.Internal.Turtle.scale
+  , Graphics.WorldTurtle.Internal.Turtle.scale
   , penColor
   , penSize
   , visible
@@ -17,13 +17,13 @@ module WorldTurtle.Internal.Turtle
 
 import Control.Lens
 
-import WorldTurtle.Shapes
+import Graphics.WorldTurtle.Shapes
 
 import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Data.Picture
 import qualified Graphics.Gloss.Data.Picture as G (scale)
 
-import qualified WorldTurtle.Internal.Coords as P
+import qualified Graphics.WorldTurtle.Internal.Coords as P
 
 data TurtleData = TurtleData
     { _heading :: Float

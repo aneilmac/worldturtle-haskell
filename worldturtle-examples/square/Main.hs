@@ -2,7 +2,7 @@ module Main where
 
 import Control.Monad (replicateM_) -- Required control flow functions.
 
-import WorldTurtle
+import Graphics.WorldTurtle
 
 main :: IO ()
 main = runTurtle $ do

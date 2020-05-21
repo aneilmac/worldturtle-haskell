@@ -1,6 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-|
-Module      : WorldTurtle.Commands
+Module      : Graphics.WorldTurtle.Commands
 Description : The commands used 
 Copyright   : (c) Archibald Neil MacDonald, 2020
 License     : BSD3
@@ -11,7 +11,7 @@ Portability : POSIX
 This module is a collection of all the commands used to manipulate a turtle!
 
 -}
-module WorldTurtle.Commands
+module Graphics.WorldTurtle.Commands
   (
   -- * Setting up a turtle.
   -- $executionDoc
@@ -31,7 +31,7 @@ module WorldTurtle.Commands
   , lt
   , right
   , rt
-  , WorldTurtle.Commands.circle
+  , Graphics.WorldTurtle.Commands.circle
   , goto
   , setPosition
   , home
@@ -63,15 +63,19 @@ module WorldTurtle.Commands
   , south
   ) where
 
-import WorldTurtle.Shapes
+import Graphics.WorldTurtle.Shapes
 
-import WorldTurtle.Internal.Commands
-import qualified WorldTurtle.Internal.Turtle as T
-import qualified WorldTurtle.Internal.Coords as P
+import Graphics.WorldTurtle.Internal.Commands
+import qualified Graphics.WorldTurtle.Internal.Turtle as T
+import qualified Graphics.WorldTurtle.Internal.Coords as P
 
 import Graphics.Gloss.Data.Color (Color, white, black)
 import Graphics.Gloss.Data.Display (Display (..))
-import qualified Graphics.Gloss.Interface.Pure.Animate as G (animate)
+
+import qualified Graphics.Gloss.Data.ViewState as G
+import qualified Graphics.Gloss.Data.ViewPort as G
+import qualified Graphics.Gloss.Interface.Pure.Game as G
+
 import Graphics.Gloss.Data.Picture
 
 import Control.Lens
@@ -160,13 +164,49 @@ makeTurtle' p f c = TurtleCommand $ do
   ts . T.penColor       .= c
   return turtle
 
--- | This is the heart of the turtle system. When run, this command will draw
--- canvas and start animating the given `TurtleCommand`.
+data World = World { elapsedTime :: Float
+                   , running :: Bool
+                   , state :: G.ViewState 
+                   }
+
+-- | Tests to see if a key-event is the reset key.
+isResetKey_ :: G.Event -> Bool
+isResetKey_ (G.EventKey (G.Char 'r') G.Down _ _)  = True
+isResetKey_ (G.EventKey (G.Char 'R') G.Down _ _)  = True
+isResetKey_ _ = False
+
+-- Tests to see if a key event is the pause key
+isPauseKey_ :: G.Event -> Bool
+isPauseKey_ (G.EventKey (G.Char 'p') G.Down _ _)  = True
+isPauseKey_ (G.EventKey (G.Char 'P') G.Down _ _)  = True
+isPauseKey_ _ = False
+
 runTurtle :: TurtleCommand () -- ^ Command sequence to execute
           -> IO ()
-runTurtle tc = G.animate display white iterateRender
+runTurtle tc = G.play display white 100 world iterateRender input timePass
      where display = InWindow "World Turtle" (800, 600) (400, 300)
-           iterateRender f = renderTurtle (seqT tc) f
+           world = World 0 True 
+                            $ G.viewStateInitWithConfig 
+                            -- Easier to do this to have spacebar overwrite R.
+                            $ reverse 
+                            $ (G.CRestore, [(G.SpecialKey G.KeySpace, Nothing)])
+                            : G.defaultCommandConfig 
+           iterateRender w = G.applyViewPortToPicture 
+                                  (G.viewStateViewPort $ state w)
+                           $ renderTurtle (seqT tc) (elapsedTime w)
+           input e w 
+                -- Reset key resets sim state (including unpausing). We 
+                -- deliberately keep view state the same.
+                | isResetKey_ e = w { elapsedTime = 0, running = True }
+                -- Pause prevents any proceeding.
+                | isPauseKey_ e = w { running = not $ running w }
+                -- Let Gloss consume the command.
+                | otherwise =
+                            w { state = G.updateViewStateWithEvent e $ state w } 
+           -- Increment simulation time if we are not paused.
+           timePass f w
+            | running w = w { elapsedTime = f + elapsedTime w }
+            | otherwise = w
 
 -- | Move the turtle backward by the specified @distance@, in the direction the 
 --   turtle is headed.
@@ -407,7 +447,7 @@ representation = getter_ blank T.representation
    For example, to set the turtle as a red circle:
    
    @
-    import WorldTurtle
+    import Graphics.WorldTurtle
     import qualified Graphics.Gloss.Data.Picture as G
 
     myCommand :: TurtleCommand ()

@@ -2,7 +2,7 @@ module Main where
 
 import Control.Monad (replicateM_)
 
-import WorldTurtle
+import Graphics.WorldTurtle
 
 main :: IO ()
 main = runTurtle $ do

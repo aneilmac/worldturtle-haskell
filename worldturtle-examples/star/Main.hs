@@ -3,7 +3,7 @@ module Main where
 import Control.Monad (forever, guard) -- Required control flow functions.
 import Graphics.Gloss.Data.Vector (magV) -- Grab the magnitude function.
 
-import WorldTurtle
+import Graphics.WorldTurtle
 
 main :: IO ()
 main = runTurtle $ makeTurtle' (0, 0) north red >>= forever . drawStar

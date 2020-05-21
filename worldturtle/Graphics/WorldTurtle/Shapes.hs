@@ -1,4 +1,4 @@
-module WorldTurtle.Shapes
+module Graphics.WorldTurtle.Shapes
   ( turtleArrow
   , thickLine
   ) where
@@ -6,7 +6,7 @@ module WorldTurtle.Shapes
 import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Data.Picture
 
-import qualified WorldTurtle.Internal.Coords as P
+import qualified Graphics.WorldTurtle.Internal.Coords as P
 
 -- | Creates the default turtle polygon arrow with a given outline color and fill
 --   color
@@ -30,7 +30,7 @@ thickLine a b t =
     $ rectangleSolid (lineLength + t) t
 
 outline_ :: Color -> Picture
-outline_ c = color c $ translate (0) (-0.5) $ scale 1.2 1.2 $ fill_ c
+outline_ c = color c $ translate (0) (-1) $ scale 1.4 1.4 $ fill_ c
 
 fill_ :: Color -> Picture
 fill_ c = color c $ translate (-4) (-2) 

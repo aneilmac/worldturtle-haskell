@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_HADDOCK hide #-}
-module WorldTurtle.Internal.Commands
+module Graphics.WorldTurtle.Internal.Commands
   ( Turtle 
   , TSC
   , SequenceCommand
@@ -21,7 +21,7 @@ module WorldTurtle.Internal.Commands
   , failSequence
   ) where
 
-import WorldTurtle.Internal.Turtle
+import Graphics.WorldTurtle.Internal.Turtle
 
 import Graphics.Gloss.Data.Picture (Picture, pictures)
 

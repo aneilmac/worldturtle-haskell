@@ -1,5 +1,5 @@
 {-# OPTIONS_HADDOCK hide #-}
-module WorldTurtle.Internal.Coords
+module Graphics.WorldTurtle.Internal.Coords
   ( module GPoint
   , module GArithmetic
   , module GVector
