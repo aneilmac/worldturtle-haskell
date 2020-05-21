@@ -59,10 +59,10 @@ stack exec parallel-circles-exe
 
 | Example | Output |
 |---------|--------|
-| [square](worldturtle-examples/square/Main.hs) | ![square image](worldturtle-examples/square/output.png) |
-| [spiralstar](worldturtle-examples/spiralstar/Main.hs) | ![spiralstar image](worldturtle-examples/spiralstar/output.png) |
-| [star](worldturtle-examples/star/Main.hs) | ![star image](worldturtle-examples/star/output.png) |
-| [parallelcircles](worldturtle-examples/parallelcircles/Main.hs) | ![parallelcircles image](worldturtle-examples/parallelcircles/output.png) |
+| [square](worldturtle-examples/square/Main.hs) | <img src="worldturtle-examples/square/output.png" width="300" /> |
+| [spiralstar](worldturtle-examples/spiralstar/Main.hs) |<img src="worldturtle-examples/spiralstar/output.png" width="300" /> |
+| [star](worldturtle-examples/star/Main.hs) | <img src="worldturtle-examples/star/output.png" width="300"/> |
+| [parallelcircles](worldturtle-examples/parallelcircles/Main.hs) | <img src="worldturtle-examples/parallelcircles/output.png" width="300"/> |
 
 ## Future work (TODO)
 
