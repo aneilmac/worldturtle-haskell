@@ -11,11 +11,11 @@ module WorldTurtle.Internal.Turtle
   , speed
   , WorldTurtle.Internal.Turtle.scale
   , penColor
+  , penSize
   , visible
   ) where
 
 import Control.Lens
-import Control.Lens.TH
 
 import WorldTurtle.Shapes
 
@@ -33,6 +33,7 @@ data TurtleData = TurtleData
     , _speed :: Float
     , _scale :: Float
     , _penColor :: Color
+    , _penSize :: Float
     , _visible :: Bool
     }
 
@@ -44,9 +45,10 @@ defaultTurtle = TurtleData
     , _position = (0, 0)
     , _representation = turtleArrow black blue
     , _penDown = True
-    , _speed = 100
+    , _speed = 200
     , _scale = 1
     , _penColor = black
+    , _penSize = 2
     , _visible = True
     }
 

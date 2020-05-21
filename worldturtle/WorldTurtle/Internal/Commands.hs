@@ -2,6 +2,7 @@
 {-# OPTIONS_HADDOCK hide #-}
 module WorldTurtle.Internal.Commands
   ( Turtle 
+  , TSC
   , SequenceCommand
   , AlmostVal
   , renderTurtle
@@ -28,11 +29,9 @@ import Control.Monad.Cont
 import Control.Monad.State
 
 import Control.Lens
-import Control.Lens.TH
 
 import Data.Void (Void, absurd)
-import Data.Semigroup ((<>))
-import Data.Maybe (Maybe, isNothing, isJust)
+import Data.Maybe (isNothing, isJust)
 import Data.Map (Map)
 import qualified Data.Map as Map
 
@@ -74,9 +73,9 @@ $(makeLenses ''TSC)
 -- must never be used for sequencing as the exitCall is undefined and will only
 -- be defined in the setup stage of the animation process.
 defaultTSC :: Float -> TSC b
-defaultTSC simTime = TSC 
+defaultTSC givenTime = TSC 
            { _pics = []
-           , _totalSimTime = simTime
+           , _totalSimTime = givenTime
            , _exitCall = error "Exit called but not defined in animation."
            , _turtles = Map.empty
            , _nextTurtleId = 0
@@ -149,8 +148,8 @@ animate' :: Float
          -> Float 
          -> (Float -> SequenceCommand b a) 
          -> SequenceCommand b a
-animate' distance speed callback =
-   let duration = distance / speed
+animate' distance turtleSpeed callback =
+   let duration = distance / turtleSpeed
        d' = if isNaN duration || isInfinite duration then 0 else duration
        --  if speed is 0 we use this as a "no animation" command from 
        --   user-space.
@@ -251,7 +250,7 @@ runParallel a b = do
 failSequence :: SequenceCommand b a
 failSequence = do
   ex <- use exitCall
-  ex
+  _ <- ex
   -- We can never reach this point with our call to `ex`. So the return type
   -- can be whatever we want it to be. Let's go crazy! 
   let (Just x) = (Nothing :: Maybe Void)
