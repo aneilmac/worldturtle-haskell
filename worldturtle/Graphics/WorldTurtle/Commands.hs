@@ -15,11 +15,7 @@ This module is a collection of all the commands used to manipulate a turtle!
 module Graphics.WorldTurtle.Commands
   (
   -- * Setting up a turtle.
-  -- $executionDoc
-    runTurtle
-  , TurtleCommand
-  -- Building a turtle.
-  , Turtle
+    Turtle
   , makeTurtle
   , makeTurtle'
   -- * Movement commands.
@@ -64,63 +60,22 @@ module Graphics.WorldTurtle.Commands
   , south
   ) where
 
-import Graphics.WorldTurtle.Shapes
-
-import Graphics.WorldTurtle.Internal.Commands
-import qualified Graphics.WorldTurtle.Internal.Turtle as T
-import qualified Graphics.WorldTurtle.Internal.Coords as P
-
-import Graphics.Gloss.Data.Color (Color, white, black)
-import Graphics.Gloss.Data.Display (Display (..))
-
-import qualified Graphics.Gloss.Data.ViewState as G
-import qualified Graphics.Gloss.Data.ViewPort as G
-import qualified Graphics.Gloss.Interface.Pure.Game as G
-
-import Graphics.Gloss.Data.Picture
+import Data.Maybe (fromMaybe)
 
 import Control.Lens
 import Control.Monad
-import Control.Applicative
 
-import Data.Maybe (fromMaybe)
+import Graphics.WorldTurtle.Shapes
 
--- $executionDoc
--- A
+import Graphics.WorldTurtle.Internal.Commands
+import Graphics.WorldTurtle.Internal.Sequence
 
+import qualified Graphics.WorldTurtle.Internal.Turtle as T
+import qualified Graphics.WorldTurtle.Internal.Coords as P
 
-type SeqC a = SequenceCommand (AlmostVal ()) a
+import Graphics.Gloss.Data.Color (Color, black)
 
-newtype TurtleCommand a = TurtleCommand 
-  { 
-    seqT :: SeqC a
-  }
-
-instance Functor TurtleCommand where
-  fmap f (TurtleCommand a) = TurtleCommand $ fmap f a
-
-instance Applicative TurtleCommand where
-  pure a = TurtleCommand $ pure a
-  liftA2 f (TurtleCommand a) (TurtleCommand b) = TurtleCommand $ liftA2 f a b
-
-instance Monad TurtleCommand where
-  (TurtleCommand a) >>= f = TurtleCommand $ a >>= \s -> seqT (f s)
-
-instance Alternative TurtleCommand where
-  empty = TurtleCommand failSequence
-  (<|>) (TurtleCommand a) (TurtleCommand b) = 
-    TurtleCommand $ alternateSequence a b
-
-instance Semigroup a => Semigroup (TurtleCommand a) where
-  (TurtleCommand a) <> (TurtleCommand b) = 
-    TurtleCommand $ combineSequence a b
-    
-instance MonadPlus TurtleCommand
-
-instance MonadFail TurtleCommand where
-  fail t = TurtleCommand $ do
-    addPicture $ text t
-    failSequence
+import Graphics.Gloss.Data.Picture
 
 {- |
 Creates a new `Turtle` and displays it on the canvas. This turtle can then be
@@ -164,50 +119,6 @@ makeTurtle' p f c = TurtleCommand $ do
   ts . T.representation .= turtleArrow black c
   ts . T.penColor       .= c
   return turtle
-
-data World = World { elapsedTime :: Float
-                   , running :: Bool
-                   , state :: G.ViewState 
-                   }
-
--- | Tests to see if a key-event is the reset key.
-isResetKey_ :: G.Event -> Bool
-isResetKey_ (G.EventKey (G.Char 'r') G.Down _ _)  = True
-isResetKey_ (G.EventKey (G.Char 'R') G.Down _ _)  = True
-isResetKey_ _ = False
-
--- Tests to see if a key event is the pause key
-isPauseKey_ :: G.Event -> Bool
-isPauseKey_ (G.EventKey (G.Char 'p') G.Down _ _)  = True
-isPauseKey_ (G.EventKey (G.Char 'P') G.Down _ _)  = True
-isPauseKey_ _ = False
-
-runTurtle :: TurtleCommand () -- ^ Command sequence to execute
-          -> IO ()
-runTurtle tc = G.play display white 30 world iterateRender input timePass
-     where display = InWindow "World Turtle" (800, 600) (400, 300)
-           world = World 0 True 
-                            $ G.viewStateInitWithConfig 
-                            -- Easier to do this to have spacebar overwrite R.
-                            $ reverse 
-                            $ (G.CRestore, [(G.SpecialKey G.KeySpace, Nothing)])
-                            : G.defaultCommandConfig 
-           iterateRender w = G.applyViewPortToPicture 
-                                  (G.viewStateViewPort $ state w)
-                           $ renderTurtle (seqT tc) (elapsedTime w)
-           input e w 
-                -- Reset key resets sim state (including unpausing). We 
-                -- deliberately keep view state the same.
-                | isResetKey_ e = w { elapsedTime = 0, running = True }
-                -- Pause prevents any proceeding.
-                | isPauseKey_ e = w { running = not $ running w }
-                -- Let Gloss consume the command.
-                | otherwise =
-                            w { state = G.updateViewStateWithEvent e $ state w } 
-           -- Increment simulation time if we are not paused.
-           timePass f w
-            | running w = w { elapsedTime = f + elapsedTime w }
-            | otherwise = w
 
 -- | Move the turtle backward by the specified @distance@, in the direction the 
 --   turtle is headed.
@@ -294,11 +205,11 @@ circle radius r turtle = TurtleCommand $ do
     let !angle = r' * q
     when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
       let lPic  = translate (fst p) (snd p)
-                $ rotate (180 - startAngle)
-                $ translate (-radius) 0
-                $ color (t ^. T.penColor)
-                $ rotate (if radius >= 0 then 0 else 180)
-                $ thickArc 0 (angle) radius (t ^. T.penSize)
+                $! rotate (180 - startAngle)
+                $! translate (-radius) 0
+                $! color (t ^. T.penColor)
+                $! rotate (if radius >= 0 then 0 else 180)
+                $! thickArc 0 (angle) radius (t ^. T.penSize)
       addPicture lPic
 
     let !s = P.degToRad $ startAngle
@@ -495,20 +406,24 @@ turtLens_ :: Applicative f
           -> (T.TurtleData -> f T.TurtleData) 
           -> TSC b 
           -> f (TSC b) 
-turtLens_ t = turtles . at t . _Just 
+turtLens_ t = turtles . at t . _Just
+{-# INLINE turtLens_ #-}
 
 -- | This is a helper function for our getter commands.
 --   It takes a default value, the lense to compose, and the turtle to inspect.
 getter_ :: a -> Lens' T.TurtleData a -> Turtle -> TurtleCommand a
 getter_ def l t = 
   TurtleCommand $ fromMaybe def <$> preuse (turtLens_ t . l)
+{-# INLINE getter_ #-}
 
 -- | This is a helper function that extracts the turtle data for a given turtle.
 tData_ :: Turtle -> SeqC T.TurtleData
 tData_ = seqT <$> getter_ T.defaultTurtle id
+{-# INLINE tData_ #-}
 
 -- | This is a helper function for our setter commands
 -- It takes a lens, the value to apply, and the turtle to modify.
 setter_ :: Lens' T.TurtleData b -> b -> Turtle -> TurtleCommand ()
 setter_ l val t = 
   TurtleCommand $ turtLens_ t . l .= val
+{-# INLINE setter_ #-}

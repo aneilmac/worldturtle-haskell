@@ -1,5 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# OPTIONS_HADDOCK hide #-}
+{-# LANGUAGE BangPatterns #-}
 module Graphics.WorldTurtle.Internal.Turtle
   ( TurtleData
   , defaultTurtle
@@ -26,15 +27,15 @@ import qualified Graphics.Gloss.Data.Picture as G (scale)
 import qualified Graphics.WorldTurtle.Internal.Coords as P
 
 data TurtleData = TurtleData
-    { _heading :: Float
-    , _position :: P.Point 
-    , _representation :: Picture
-    , _penDown :: Bool
-    , _speed :: Float
-    , _scale :: Float
-    , _penColor :: Color
-    , _penSize :: Float
-    , _visible :: Bool
+    { _heading :: !Float
+    , _position :: !P.Point 
+    , _representation :: !Picture
+    , _penDown :: !Bool
+    , _speed :: !Float
+    , _scale :: !Float
+    , _penColor :: !Color
+    , _penSize :: !Float
+    , _visible :: !Bool
     }
 
 $(makeLenses ''TurtleData)

@@ -26,6 +26,7 @@ library
   other-modules:
       Graphics.WorldTurtle.Internal.Commands
       Graphics.WorldTurtle.Internal.Coords
+      Graphics.WorldTurtle.Internal.Sequence
       Graphics.WorldTurtle.Internal.Turtle
   build-depends:
       base >=4.7 && <5

@@ -1,3 +1,15 @@
+{-|
+Module      : Graphics.WorldTurtle.Shapes
+Description : WorldTurtle
+Copyright   : (c) Archibald Neil MacDonald, 2020
+License     : BSD3
+Maintainer  : FortOyer@hotmail.co.uk
+Stability   : experimental
+Portability : POSIX
+
+This module exposes some common shapes.
+
+-}
 module Graphics.WorldTurtle.Shapes
   ( turtleArrow
   , thickLine

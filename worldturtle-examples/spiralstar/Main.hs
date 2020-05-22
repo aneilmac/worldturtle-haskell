@@ -7,10 +7,10 @@ import Graphics.Gloss.Data.Color
 import Graphics.WorldTurtle
 
 colors :: [Color]
-colors = [rose, violet, azure, aquamarine, chartreuse, orange]
+colors = cycle [rose, violet, azure, aquamarine, chartreuse, orange]
 
 steps :: [(Float, Color)]
-steps = zip [0..20] $ cycle colors
+steps = zip [0..20] colors
 
 main :: IO ()
 main = runTurtle $ do
