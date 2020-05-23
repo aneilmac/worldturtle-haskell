@@ -17,11 +17,32 @@ executable {{name}}
   hs-source-dirs:      src
   main-is:             Main.hs
   default-language:    Haskell2010
-  build-depends:
-    - base >= 4.7 && < 5
-    - gloss
-    - worldturtle >= 0.1
-    - gloss >=1.13
+  build-depends: base >= 4.7 && < 5
+               , gloss
+               , worldturtle >= 0.1
+               , gloss >=1.13
+
+{-# START_FILE .vscode/tasks.json #-}
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "stack build",
+      "type": "shell",
+      "command": "stack build",
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "run {{name}}",
+      "type": "shell",
+      "command": "stack exec {{name}}",
+    }
+  ]
+}
 
 {-# START_FILE Setup.hs #-}
 import Distribution.Simple
