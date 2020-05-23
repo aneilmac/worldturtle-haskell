@@ -1,4 +1,5 @@
 .stack-work/
+docs/hello-worldturtle/_build/
 *~
 stack.yaml.lock
 # Ignore the generated files for memory leak detection.

@@ -51,6 +51,7 @@ parallel as opposed to the default of in sequence. Here the [parallel/serial com
 | [parallelserialcomparison](worldturtle-examples/parallelserialcomparison/Main.hs) | <img src="worldturtle-examples/parallelserialcomparison/output.png" width="300"/> |
 | [parallelcircles](worldturtle-examples/parallelcircles/Main.hs) | <img src="worldturtle-examples/parallelcircles/output.png" width="300"/> |
 | [branch](worldturtle-examples/branch/Main.hs) | <img src="worldturtle-examples/branch/output.png" width="300"/> |
+| [spiralsquare](worldturtle-examples/spiralsquare/Main.hs) | <img src="worldturtle-examples/spiralsquare/output.png" width="300"/> |
 
 ## Interactive Controls
 

@@ -1,4 +1,4 @@
-cabal-version: 1.12
+cabal-version: 2.0
 
 name:           worldturtle-examples
 version:        0.1.0.0
@@ -93,6 +93,23 @@ executable parallelserialcomparison-exe
   build-depends:
       base
     , gloss
+    , worldturtle
+  default-language: Haskell2010
+  ghc-options:
+    -O2
+    -Wall
+    -threaded
+    -rtsopts
+
+executable spiralsquare-exe
+  main-is: Main.hs
+  hs-source-dirs: spiralsquare
+  other-modules:
+    HueShift
+  build-depends:
+      base
+    , gloss
+    , matrix
     , worldturtle
   default-language: Haskell2010
   ghc-options:
