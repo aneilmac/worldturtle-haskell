@@ -58,7 +58,7 @@ type SequenceCommand b a = ContT b (TurtleState b) a
 -- do not document it in this way however.
 
 -- | The Turtle that is drawn on the canvas! Create a new turtle using 
--- "makeTurtle".
+-- `Graphics.WorldTurtle.Commands.makeTurtle`.
 newtype Turtle = Turtle Int deriving (Eq, Ord)
 
 data TSC b = TSC

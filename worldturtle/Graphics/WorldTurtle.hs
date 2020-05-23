@@ -7,17 +7,20 @@ Maintainer  : FortOyer@hotmail.co.uk
 Stability   : experimental
 Portability : POSIX
 
-This module exposes the Turtle running commands.
+"Graphics.WorldTurtle" is a module for writing and rendering turtle graphics
+in Haskell.
 
 -}
 module Graphics.WorldTurtle
      ( 
      -- * Running the turtle
+     -- $running
        TurtleCommand 
      , runTurtle 
      -- * Parallel animation
+     -- $parallel
      , (<|>)
-     -- * Modules
+     -- * Further documentation
      , module Graphics.WorldTurtle.Commands
      , module Graphics.WorldTurtle.Shapes
      , module Graphics.Gloss.Data.Color
@@ -41,6 +44,35 @@ data World = World { elapsedTime :: !Float
                    , state :: !G.ViewState 
                    }
 
+{- | `runTurtle` takes a `TurtleCommand` and produces the animation in a new
+     window! 
+
+     The simplest way to run `runTurtle` is to execute it directly from 
+     your main function like so:
+
+     @
+         main :: IO ()
+         main = runTurtle yourOwnCoolCommand
+     @
+
+     While running, you can interact with the window in the following way:
+
+     +------------------------------------------+-------------------+
+     | Action                                   | Interaction       |
+     +==========================================+===================+
+     | Pan the viewport.                        | Click and drag    |
+     +------------------------------------------+-------------------+
+     | Zoom in/out.                             |Mousewheel up/down |
+     +------------------------------------------+-------------------+
+     | Reset the viewport to initial position.  | Spacebar          |
+     +------------------------------------------+-------------------+
+     | Reset the animation.                     | `R` key           |
+     +------------------------------------------+-------------------+
+     | Pause the animation.                     | `P` key           |
+     +------------------------------------------+-------------------+
+     | Quit                                     | Escape key        |
+     +------------------------------------------+-------------------+
+-}
 runTurtle :: TurtleCommand () -- ^ Command sequence to execute
           -> IO ()
 runTurtle tc = G.play display white 30 defaultWorld iterateRender input timePass
@@ -80,3 +112,44 @@ isPauseKey_ :: G.Event -> Bool
 isPauseKey_ (G.EventKey (G.Char 'p') G.Down _ _)  = True
 isPauseKey_ (G.EventKey (G.Char 'P') G.Down _ _)  = True
 isPauseKey_ _ = False
+
+{- $running
+
+It is easy to create and animate your turtle. You just pass your commands to
+`runTurtle` like so:
+
+@
+     import Control.Monad (replicateM_)
+     import Graphics.WorldTurtle
+
+     myCommand :: TurtleCommand ()
+     myCommand = do 
+       t <- makeTurtle
+       replicateM_ 4 $ forward 90 t >> right 90 t
+
+     main :: IO ()
+     main = runTurtle myCommand
+@
+
+Which will produce this animation
+
+![basic_turtle_square gif](docs/images/basic_turtle_square.gif)
+-}
+
+
+{- $parallel
+
+   We already know that `TurtleCommand`s can be combined with `(>>)`, but the
+   alternative operation `(<|>)` can alo be used to combine two 
+   `TurtleCommand`s. This has a special meaning: do both animations at the 
+   same time!
+
+   ![parallel and serial gif](docs/images/parallel_serial_turtles.gif)
+
+   Note that the result of @a \<|\> b@ is:
+   
+   >>> a <|> b
+   a
+
+   when @a@ is not `mzero`.
+-}

@@ -1,11 +1,11 @@
 # WorldTurtle: Turtle Animations in Haskell
 
-<img src="docs/images/parallel_circles_animated.gif" width="400" />
+<img src="worldturtle/docs/images/parallel_circles_animated.gif" width="400" />
 
 WorldTurtle is a Haskell take on [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics).
 
-The intent of this module is a teaching tool of Haskell principles and syntax
-by using turtle commands to produce animations.
+The intent of this module is a teaching tool by using turtle commands to
+produce animations.
 
 ## Features
 
@@ -32,14 +32,14 @@ main = runTurtle $ do
 
 Like so!
  
-<img src="docs/images/basic_turtle_square.gif" width="400" />
+<img src="worldturtle/docs/images/basic_turtle_square.gif" width="400" />
  
 ### Parallel animations
 
 Use of the Alternative operator `(<|>)` allows animations to run in
 parallel as opposed to the default of in sequence. Here the [parallel/serial comparison](worldturtle-examples/parallelserialcomparison/Main.hs) example shows a combination of sequenced and parallel animations.
 
-<img src="docs/images/parallel_serial_turtles.gif" width="400"/>
+<img src="worldturtle/docs/images/parallel_serial_turtles.gif" width="400"/>
 
 ## Examples
 
@@ -61,6 +61,7 @@ parallel as opposed to the default of in sequence. Here the [parallel/serial com
 | Reset the viewport to initial position.  | Spacebar          |
 | Reset the animation.                     | `R` key           |
 | Pause the animation.                     | `P` key           |
+| Quit                                     | Escape key        |
 
 ## Prerequisites
 

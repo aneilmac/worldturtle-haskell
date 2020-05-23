@@ -190,7 +190,8 @@ left !r turtle = TurtleCommand $ do
 lt :: Float -> Turtle -> TurtleCommand ()
 lt = left
 
-
+-- | Draws an arc starting from a given starting point on the edge of the
+--   circle.
 drawCircle_ :: (Float, Float) -- ^ Point on edge of circle to start from
             -> Float -- ^ Radius of circle
             -> Float -- ^ Absolute starting angle in degrees
@@ -205,6 +206,7 @@ drawCircle_ !p !radius !startAngle !endAngle !pSize !pColor =
                            $! rotate (if radius >= 0 then 0 else 180)
                            $! thickArc 0 (endAngle) radius pSize
 
+-- Calculates the next position of a turtle on a circle.
 calculateNewPoint_ :: (Float, Float) -- ^ Point on edge of circle
                    -> Float -- ^ Radius of circle
                    -> Float -- ^ Absolute starting angle in degrees
@@ -220,6 +222,12 @@ calculateNewPoint_ !p !radius !startAngle !angle = (px, py)
         !cA = cos a
         !sA = sin a
 
+-- | Draw an arc with a given @radius@. The center is @radius@ units left of the
+--   @turtle@ if positive. Otherwise  @radius@ units right of the @turtle@ if 
+--   negative.
+--
+--   The arc is drawn in an anticlockwise direction if the radius is positive,
+--   otherwise, it is drawn in a clockwise direction.
 circle  :: Float -- ^ Radius of the circle.
         -> Float -- ^ Angle to travel in degrees. 
                  -- For example: @360@ for a full circle or @180@ for a 
@@ -355,7 +363,7 @@ setVisible = setter_ T.visible
 --   Speed is is @distance@ per second.
 --   A speed of 0 is equivalent to no animation being performed and instant 
 --   drawing.
--- The default value is @TODO - DECIDE ON A DEFAULT VALUE@.
+-- The default value is @200@.
 speed :: Turtle -- ^ Turtle to query.
       -> TurtleCommand Float
 speed = getter_ 0 T.speed

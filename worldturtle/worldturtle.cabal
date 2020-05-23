@@ -2,8 +2,7 @@ cabal-version: 1.12
 
 name:           worldturtle
 version:        0.1.0.0
-synopsis:       Teaching Haskell through turtle drawing.
-description:    Please see the README on GitHub at <https://github.com/FortOyer/worldturtle-haskell#readme>
+synopsis:       Teaching Haskell through turtle graphics.
 category:       teaching
 homepage:       https://github.com/FortOyer/worldturtle-haskell#readme
 bug-reports:    https://github.com/FortOyer/worldturtle-haskell/issues
@@ -13,6 +12,24 @@ copyright:      2020 Archibald Neil MacDonald
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
+
+description: 
+  Have you ever heard of [Turtle Graphics](https://en.wikipedia.org//wiki//Turtle_graphics)?
+  .
+  No? Think of a @turtle@ as a cursor you can program to draw graphics! 
+  .
+  Turtle graphics are a fantastic introduction to the world of
+    programming and to the syntax of a new programming language.
+  .
+  ![parallelcircles gif](docs/images/parallel_circles_animated_300.gif)
+  .
+  This module is a framework built on top of "Graphics.Gloss" to render turtles
+  programmed in Haskell as animations. This is primarily aimed as a 
+  teaching tool to beginners - but also, it's cool to draw things!
+  .
+  See The API ref, "Graphics.WorldTurtle", for features!
+
+extra-doc-files: docs/images/*.gif
 
 source-repository head
   type: git
