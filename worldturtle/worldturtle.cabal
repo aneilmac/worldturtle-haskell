@@ -22,12 +22,11 @@ library
   exposed-modules:
       Graphics.WorldTurtle
       Graphics.WorldTurtle.Commands
-      Graphics.WorldTurtle.Shapes
-  other-modules:
       Graphics.WorldTurtle.Internal.Commands
       Graphics.WorldTurtle.Internal.Coords
       Graphics.WorldTurtle.Internal.Sequence
       Graphics.WorldTurtle.Internal.Turtle
+      Graphics.WorldTurtle.Shapes
   build-depends:
       base >=4.7 && <5
     , containers >=0.6

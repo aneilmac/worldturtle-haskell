@@ -1,3 +1,8 @@
 .stack-work/
 *~
 stack.yaml.lock
+# Ignore the generated files for memory leak detection.
+*.hp
+*.ps
+*.pdf
+*.aux

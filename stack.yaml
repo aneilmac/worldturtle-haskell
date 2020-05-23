@@ -22,3 +22,4 @@ resolver: lts-15.12
 packages:
 - worldturtle
 - worldturtle-examples
+- worldturtle-tests

@@ -151,22 +151,22 @@ animate' :: Float
          -> Float 
          -> (Float -> SequenceCommand b a) 
          -> SequenceCommand b a
-animate' distance turtleSpeed callback =
-   let duration = distance / turtleSpeed
-       d' = if isNaN duration || isInfinite duration then 0 else duration
+animate' !distance !turtleSpeed callback =
+   let !duration = distance / turtleSpeed
+       !d' = if isNaN duration || isInfinite duration then 0 else duration
        --  if speed is 0 we use this as a "no animation" command from 
        --   user-space.
      in animate (abs d') callback
 
 animate :: Float -> (Float -> SequenceCommand b a) -> SequenceCommand b a
-animate duration callback = do
+animate !duration callback = do
    timeRemaining <- simTime -- simulation time to go
-   let availableTime = min timeRemaining duration
+   let !availableTime = min timeRemaining duration
    --  Amount of time we have to complete the animation before we need to exit.
-   let timeQuotient = if availableTime == 0 then 1 else availableTime / duration
+   let !timeQuot = if availableTime == 0 then 1 else availableTime / duration
    --  quotient of available time vs required time. Note that when the duration
    --   is 0 we say "don't do any animation"
-   t <- callback timeQuotient 
+   t <- callback timeQuot 
    --  Perform the calculation with the quotient for lerping
    decrementSimTime availableTime 
    --  Test to see if this is the end of our animation and if so exit early
@@ -182,13 +182,13 @@ combineSequence :: Semigroup a
                 -> SequenceCommand b a 
                     -- ^ New sequence of A and B in parallel.
 combineSequence a b = do
-  (aVal, bVal) <- runParallel a b
+  (!aVal, !bVal) <- runParallel a b
   -- If either attempt failed, we fail also.
   when (isNothing aVal || isNothing bVal) failSequence
 
   -- Everything is hunky dory so we continue on into the next bind of the monad.
-  let (Just aVal') = aVal
-  let (Just bVal') = bVal
+  let (Just !aVal') = aVal
+  let (Just !bVal') = bVal
   return $ aVal' <> bVal'
 
 -- | Runs two items in sequence, returns the result of `a` if `a` passes,
@@ -199,15 +199,15 @@ alternateSequence :: SequenceCommand b a -- ^ Sequence @a@ to run.
                   -> SequenceCommand b a -- ^ Sequence @b@ to run.
                   -> SequenceCommand b a
 alternateSequence a b = do
-  (aVal, bVal) <- runParallel a b
+  (!aVal, !bVal) <- runParallel a b
   
   -- If both values failed we fail also.
   when (isNothing aVal && isNothing bVal) failSequence
 
   -- If A passes, return the value of A, otherwise return the value of B.
   if isJust aVal 
-    then let (Just aVal') = aVal in return aVal'
-    else let (Just bVal') = bVal in return bVal'
+    then let (Just !aVal') = aVal in return $! aVal'
+    else let (Just !bVal') = bVal in return $! bVal'
 
 -- | Given two sequences @a@ and @b@, instead of running them both as separate 
 --   animations, run them both in parallel!

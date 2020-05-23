@@ -125,7 +125,7 @@ makeTurtle' p f c = TurtleCommand $ do
 backward :: Float -- ^ Distance to move the turtle.
          -> Turtle -- ^ The turtle to move.
          -> TurtleCommand ()
-backward d = forward (-d)
+backward !d = forward (-d)
 
 -- | Shorthand for `backward`.
 bk :: Float -> Turtle -> TurtleCommand ()
@@ -135,7 +135,7 @@ bk = backward
 right :: Float -- ^ Rotation amount to apply to turtle.
       -> Turtle -- ^ The turtle to rotate.
       -> TurtleCommand ()
-right r = left (-r)
+right !r = left (-r)
 
 -- | Shorthand for `right`.
 rt :: Float -> Turtle -> TurtleCommand ()
@@ -146,7 +146,7 @@ rt = right
 forward :: Float -- ^ Distance to move the turtle.
         -> Turtle -- ^ The turtle to move.
         -> TurtleCommand ()
-forward d turtle = TurtleCommand $ do
+forward !d turtle = TurtleCommand $ do
     t <- tData_ turtle
     --  Get origin point
     animate' d (t ^. T.speed) $ \ q -> do
@@ -176,7 +176,7 @@ stamp turtle = TurtleCommand $ tData_ turtle >>= addPicture . T.drawTurtle
 left :: Float -- ^ Rotation amount to apply to turtle.
      -> Turtle -- ^ The turtle to rotate.
      -> TurtleCommand ()
-left r turtle = TurtleCommand $ do
+left !r turtle = TurtleCommand $ do
     t <- tData_ turtle
     let r' = P.normalizeDirection r
     animate' (P.degToRad r') (t ^. T.speed) $ \q -> do
@@ -190,41 +190,59 @@ left r turtle = TurtleCommand $ do
 lt :: Float -> Turtle -> TurtleCommand ()
 lt = left
 
+
+drawCircle_ :: (Float, Float) -- ^ Point on edge of circle to start from
+            -> Float -- ^ Radius of circle
+            -> Float -- ^ Absolute starting angle in degrees
+            -> Float -- ^ Rotation amount about radius in degrees
+            -> Float -- ^ Line thickness (penSize)
+            -> Color -- ^ Color of circle 
+            -> Picture -- ^ Resulting circle
+drawCircle_ !p !radius !startAngle !endAngle !pSize !pColor = 
+ translate (fst p) (snd p) $! rotate (180 - startAngle)
+                           $! translate (-radius) 0
+                           $! color pColor
+                           $! rotate (if radius >= 0 then 0 else 180)
+                           $! thickArc 0 (endAngle) radius pSize
+
+calculateNewPoint_ :: (Float, Float) -- ^ Point on edge of circle
+                   -> Float -- ^ Radius of circle
+                   -> Float -- ^ Absolute starting angle in degrees
+                   -> Float -- ^ Rotation amount about radius in degrees
+                   -> (Float, Float) -- ^ Resulting new point
+calculateNewPoint_ !p !radius !startAngle !angle = (px, py)
+  where !px = fst p - (radius * (cA - cS))
+        !py = snd p - (radius * (sA - sS))
+        !s = P.degToRad startAngle
+        !a = P.degToRad $ angle + startAngle
+        !cS = cos s
+        !sS = sin s
+        !cA = cos a
+        !sA = sin a
+
 circle  :: Float -- ^ Radius of the circle.
         -> Float -- ^ Angle to travel in degrees. 
                  -- For example: @360@ for a full circle or @180@ for a 
                  -- semicircle.
         -> Turtle -- ^ Turtle to move in a circle.
         -> TurtleCommand ()
-circle radius r turtle = TurtleCommand $ do
+circle !radius !r turtle = TurtleCommand $ do
   t <- tData_ turtle
-  let r' = P.normalizeHeading r
-  animate' (radius * P.degToRad r') (t ^. T.speed) $ \q -> do
+  let !r' = P.normalizeHeading r
+  animate' (radius * P.degToRad r') (t ^. T.speed) $ \ q -> do
     let !startAngle = t ^. T.heading + 90
     let !p = t ^. T.position
     let !angle = r' * q
     when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
-      let lPic  = translate (fst p) (snd p)
-                $! rotate (180 - startAngle)
-                $! translate (-radius) 0
-                $! color (t ^. T.penColor)
-                $! rotate (if radius >= 0 then 0 else 180)
-                $! thickArc 0 (angle) radius (t ^. T.penSize)
-      addPicture lPic
-
-    let !s = P.degToRad $ startAngle
-    let !a = P.degToRad $ angle + startAngle
-    let !cS = cos s
-    let !sS = sin s
-    let !cA = cos a
-    let !sA = sin a
-    let !rx = fst p - (radius * (cA - cS))
-    let !ry = snd p - (radius * (sA - sS))
+      addPicture $! drawCircle_ p radius startAngle angle 
+                    (t ^. T.penSize) (t ^. T.penColor)
 
     -- Update the turtle with the new values.
     let ts = turtLens_ turtle
     ts . T.heading .= (P.normalizeHeading $ startAngle - 90 + angle)
-    ts . T.position .= (rx , ry)
+
+    let !p' = calculateNewPoint_ p radius startAngle angle
+    ts . T.position .= p'
 
 -- | Returns the turtle's current position.
 --   Default (starting) position is @(0, 0)@.

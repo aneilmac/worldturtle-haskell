@@ -43,11 +43,11 @@ data World = World { elapsedTime :: !Float
 
 runTurtle :: TurtleCommand () -- ^ Command sequence to execute
           -> IO ()
-runTurtle tc = G.play display white 30 defaultWorld_ iterateRender input timePass
+runTurtle tc = G.play display white 30 defaultWorld iterateRender input timePass
   where display = InWindow "World Turtle" (800, 600) (400, 300)
         iterateRender w = G.applyViewPortToPicture 
                                (G.viewStateViewPort $ state w)
-                        $ renderTurtle (seqT tc) (elapsedTime w)
+                        $! renderTurtle (seqT tc) (elapsedTime w)
         input e w 
              -- Reset key resets sim state (including unpausing). We 
              -- deliberately keep view state the same.
@@ -61,13 +61,13 @@ runTurtle tc = G.play display white 30 defaultWorld_ iterateRender input timePas
          | running w = w { elapsedTime = f + elapsedTime w }
          | otherwise = w
 
-defaultWorld_ :: World
-defaultWorld_ = World 0 True 
-              $ G.viewStateInitWithConfig 
-              -- Easier to do this to have spacebar overwrite R.
-              $ reverse 
-              $ (G.CRestore, [(G.SpecialKey G.KeySpace, Nothing)])
-              : G.defaultCommandConfig
+defaultWorld :: World
+defaultWorld = World 0 True 
+             $ G.viewStateInitWithConfig 
+             -- Easier to do this to have spacebar overwrite R.
+             $ reverse 
+             $ (G.CRestore, [(G.SpecialKey G.KeySpace, Nothing)])
+             : G.defaultCommandConfig
 
 -- | Tests to see if a key-event is the reset key.
 isResetKey_ :: G.Event -> Bool
