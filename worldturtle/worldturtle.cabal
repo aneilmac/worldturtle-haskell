@@ -2,7 +2,7 @@ cabal-version: 2.0
 
 name:           worldturtle
 version:        0.1.0.0
-synopsis:       Teaching Haskell through turtle graphics.
+synopsis:       Turtle graphics.
 category:       teaching
 homepage:       https://github.com/FortOyer/worldturtle-haskell#readme
 bug-reports:    https://github.com/FortOyer/worldturtle-haskell/issues
@@ -12,6 +12,7 @@ copyright:      2020 Archibald Neil MacDonald
 license:        BSD3
 license-file:   LICENSE
 build-type:     Simple
+tested-with: GHC ==8.8.3 || ==8.10.3
 
 description: 
   Have you ever heard of [Turtle Graphics](https://en.wikipedia.org//wiki//Turtle_graphics)?
@@ -46,10 +47,10 @@ library
       Graphics.WorldTurtle.Shapes
   build-depends:
       base >=4.7 && <5
-    , containers >=0.6
-    , gloss >=1.13
-    , lens >=4.18
-    , mtl >=2.2
+    , containers >=0.6.2 && < 0.7
+    , gloss >=1.13.1 && < 1.14
+    , lens >=4.18.1 && < 4.20
+    , mtl >=2.2.2 && < 2.3
   default-language: Haskell2010
   ghc-options: 
     -O2
