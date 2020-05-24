@@ -141,6 +141,15 @@ right !r = left (-r)
 rt :: Float -> Turtle -> TurtleCommand ()
 rt = right
 
+calculateNewPointF_ :: P.Point -- ^ Starting point
+                    -> Float -- ^ Distance
+                    -> Float -- ^ Heading in degrees.
+                    -> Float -- ^ coefficient [0, 1]
+                    -> P.Point
+calculateNewPointF_ !p !d !h !q = P.lerp q p endP
+  where !vec = P.rotateV (P.degToRad h) (d, 0)
+        !endP = vec P.+ p
+
 -- | Move the turtle forward by the specified @distance@, in the direction the 
 --   turtle is headed.
 forward :: Float -- ^ Distance to move the turtle.
@@ -150,11 +159,9 @@ forward !d turtle = TurtleCommand $ do
     t <- tData_ turtle
     --  Get origin point
     animate' d (t ^. T.speed) $ \ q -> do
-      let !startP = t ^. T.position
-      let !vec = P.rotateV (P.degToRad $ t ^. T.heading) (d, 0)
-      let !endP = vec P.+ startP
-      let !midP = P.lerp q startP endP
       --  Get new endpoint via percentage
+      let !startP = t ^. T.position
+      let !midP = calculateNewPointF_ startP d (t ^. T.heading) q
       when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
         addPicture $ color (t ^. T.penColor) 
                    $ thickLine startP midP (t ^. T.penSize)
@@ -192,7 +199,7 @@ lt = left
 
 -- | Draws an arc starting from a given starting point on the edge of the
 --   circle.
-drawCircle_ :: (Float, Float) -- ^ Point on edge of circle to start from
+drawCircle_ :: P.Point -- ^ Point on edge of circle to start from
             -> Float -- ^ Radius of circle
             -> Float -- ^ Absolute starting angle in degrees
             -> Float -- ^ Rotation amount about radius in degrees
@@ -200,19 +207,19 @@ drawCircle_ :: (Float, Float) -- ^ Point on edge of circle to start from
             -> Color -- ^ Color of circle 
             -> Picture -- ^ Resulting circle
 drawCircle_ !p !radius !startAngle !endAngle !pSize !pColor = 
- translate (fst p) (snd p) $! rotate (180 - startAngle)
-                           $! translate (-radius) 0
-                           $! color pColor
-                           $! rotate (if radius >= 0 then 0 else 180)
-                           $! thickArc 0 (endAngle) radius pSize
+ translate (fst p) (snd p) $ rotate (180 - startAngle)
+                           $ translate (-radius) 0
+                           $ color pColor
+                           $ rotate (if radius >= 0 then 0 else 180)
+                           $ thickArc 0 (endAngle) radius pSize
 
 -- Calculates the next position of a turtle on a circle.
-calculateNewPoint_ :: (Float, Float) -- ^ Point on edge of circle
-                   -> Float -- ^ Radius of circle
-                   -> Float -- ^ Absolute starting angle in degrees
-                   -> Float -- ^ Rotation amount about radius in degrees
-                   -> (Float, Float) -- ^ Resulting new point
-calculateNewPoint_ !p !radius !startAngle !angle = (px, py)
+calculateNewPointC_ :: P.Point -- ^ Point on edge of circle
+                    -> Float -- ^ Radius of circle
+                    -> Float -- ^ Absolute starting angle in degrees
+                    -> Float -- ^ Rotation amount about radius in degrees
+                    -> P.Point -- ^ Resulting new point
+calculateNewPointC_ !p !radius !startAngle !angle = (px, py)
   where !px = fst p - (radius * (cA - cS))
         !py = snd p - (radius * (sA - sS))
         !s = P.degToRad startAngle
@@ -249,7 +256,7 @@ circle !radius !r turtle = TurtleCommand $ do
     let ts = turtLens_ turtle
     ts . T.heading .= (P.normalizeHeading $ startAngle - 90 + angle)
 
-    let !p' = calculateNewPoint_ p radius startAngle angle
+    let !p' = calculateNewPointC_ p radius startAngle angle
     ts . T.position .= p'
 
 -- | Returns the turtle's current position.
@@ -266,7 +273,6 @@ home turtle = TurtleCommand $ do
   let ts = turtLens_ turtle
   ts . T.position       .= (0, 0)
   ts . T.heading        .= 90
-
 
 -- | Warps the turtle to a new position.
 --   The turtle jumps to this new position with no animation. If the pen is down

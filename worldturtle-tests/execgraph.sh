@@ -1,6 +1,6 @@
 #!/bin/bash
 rm --force $1{.aux,.hp,.pdf,.ps} && \
-  stack exec --profile -- $1 -RTS ${@:2} +RTS -i0.02 -hc -hm\
+  stack exec --profile -- $1 -RTS ${@:2} +RTS -i0.02 -hy -hm\
 Graphics.WorldTurtle,\
 Graphics.WorldTurtle.Commands,\
 Graphics.WorldTurtle.Internal.Commands,\

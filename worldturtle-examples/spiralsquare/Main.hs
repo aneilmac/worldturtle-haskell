@@ -16,6 +16,7 @@ spiral :: Turtle -> TurtleCommand ()
 spiral t = do
   setPenColor cyan t
   setPenSize 1.5 t
+  setSpeed 500 t
   forM_ forwards $ \ f -> do
     forward f t
     left 89.5 t

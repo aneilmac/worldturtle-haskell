@@ -33,14 +33,17 @@ thickLine :: Point -- ^ Starting point.
           -> Point  -- ^ Ending point.
           -> Float -- ^ Line thickness.
           -> Picture -- ^ Produced line.
-thickLine !a !b !t = 
-  let v = b P.- a
-      lineLength = P.magV v
-      angle = P.radToDeg $ P.argV v
-   in translate (fst a) (snd a)
-    $! rotate (360 - angle)
-    $! translate (lineLength/2) 0
-    $! rectangleSolid (lineLength + t) t
+thickLine a b t = polygon $ [a1, a2, b2, b1]
+  where !v = b P.- a
+        !angle = P.argV v
+        !perpAngle = angle - (pi/2)
+        !t2 = t / 2
+        !t' = P.rotateV angle (t2, 0)
+        !t'' = P.rotateV perpAngle (t2, 0)
+        !a1 = a P.- t'' P.- t'
+        !a2 = a P.+ t'' P.- t'
+        !b1 = b P.- t'' P.+ t'
+        !b2 = b P.+ t'' P.+ t'
 
 outline_ :: Color -> Picture
 outline_ !c = color c $ translate (0) (-1) $ scale 1.4 1.4 $ fill_ c
