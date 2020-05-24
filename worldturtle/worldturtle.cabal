@@ -31,6 +31,7 @@ description:
   See The API ref, "Graphics.WorldTurtle", for features!
 
 extra-doc-files: docs/images/*.gif
+extra-source-files: ChangeLog.md
 
 source-repository head
   type: git

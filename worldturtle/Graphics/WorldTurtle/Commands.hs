@@ -346,7 +346,7 @@ penSize :: Turtle -- ^ Turtle to query.
 penSize = getter_ 0 T.penSize
 
 -- | Sets the turtle's pen size.
---   See `peSize`.
+--   See `penSize`.
 setPenSize :: Float -- ^ New size for turtle's pen.
            -> Turtle -- ^ Turtle to modify.
            -> TurtleCommand ()

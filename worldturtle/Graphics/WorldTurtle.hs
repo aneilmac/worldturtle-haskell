@@ -66,9 +66,9 @@ data World = World { elapsedTime :: !Float
      +------------------------------------------+-------------------+
      | Reset the viewport to initial position.  | Spacebar          |
      +------------------------------------------+-------------------+
-     | Reset the animation.                     | `R` key           |
+     | Reset the animation.                     | @R@ key           |
      +------------------------------------------+-------------------+
-     | Pause the animation.                     | `P` key           |
+     | Pause the animation.                     | @P@ key           |
      +------------------------------------------+-------------------+
      | Quit                                     | Escape key        |
      +------------------------------------------+-------------------+
@@ -151,5 +151,5 @@ Which will produce this animation
    >>> a <|> b
    a
 
-   when @a@ is not `mzero`.
+   when /a/ is not `Control.Monad.mzero`.
 -}

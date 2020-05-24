@@ -21,8 +21,8 @@ import Graphics.Gloss.Data.Picture
 
 import qualified Graphics.WorldTurtle.Internal.Coords as P
 
--- | Creates the default turtle polygon arrow with a given outline color and fill
---   color
+-- | Creates the default turtle polygon arrow with a given outline color and 
+--   fill color.
 turtleArrow :: Color -- ^ Outline color
             -> Color -- ^ Fill color
             -> Picture -- ^ Arrow shape.
