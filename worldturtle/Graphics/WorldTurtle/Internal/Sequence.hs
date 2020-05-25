@@ -46,9 +46,9 @@ type AlmostVal a = Maybe a
 type TurtleState b = State (TSC b)
 
 -- | Continuation Monad on top of the State Monad of form @SequenceCommand b a@.
---   @b@ is the final return type of the entire Monad sequence - this is what 
+--   /b/ is the final return type of the entire Monad sequence - this is what 
 --   will be returned if/when we need to exit early from anywhere in a great big
---   sequence of steps. @a@ is the return type of the current step of the 
+--   sequence of steps. /a/ is the return type of the current step of the 
 --   animation sequence. That is: what will be passed into the next step.
 type SequenceCommand b a = ContT b (TurtleState b) a
 
@@ -177,8 +177,8 @@ animate !duration callback = do
 --   This combination can only return if both A and B return. Compare to 
 --   `alternateSequence` which can return if one returns.
 combineSequence :: Semigroup a
-                => SequenceCommand b a -- ^ Sequence @a@ to run.
-                -> SequenceCommand b a -- ^ Sequence @b@ to run.
+                => SequenceCommand b a -- ^ Sequence /a/ to run.
+                -> SequenceCommand b a -- ^ Sequence /b/ to run.
                 -> SequenceCommand b a 
                     -- ^ New sequence of A and B in parallel.
 combineSequence a b = do
@@ -209,10 +209,10 @@ alternateSequence a b = do
     then let (Just !aVal') = aVal in return $! aVal'
     else let (Just !bVal') = bVal in return $! bVal'
 
--- | Given two sequences @a@ and @b@, instead of running them both as separate 
+-- | Given two sequences /a/ and /b/, instead of running them both as separate 
 --   animations, run them both in parallel!
-runParallel :: SequenceCommand c a -- ^ Sequence @a@ to run.
-            -> SequenceCommand c b -- ^ Sequence @b@ to run.
+runParallel :: SequenceCommand c a -- ^ Sequence /a/ to run.
+            -> SequenceCommand c b -- ^ Sequence /b/ to run.
             -> SequenceCommand c (AlmostVal a, AlmostVal b)
                -- ^ New sequence of A and B which returns both results.
 runParallel a b = do

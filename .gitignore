@@ -1,4 +1,6 @@
 .stack-work/
+dist-newstyle/
+dist/
 docs/hello-worldturtle/_build/
 *~
 stack.yaml.lock
@@ -7,3 +9,4 @@ stack.yaml.lock
 *.ps
 *.pdf
 *.aux
+*.prof

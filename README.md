@@ -101,12 +101,3 @@ executed from stack. To run `parallelcircles` try:
 ```sh
 stack exec parallelcircles-exe
 ```
-
-## Future work (TODO)
-
-- [ ] Improve the docs as much as possible.
-- [ ] Animations.
-- [ ] Start the main goal: Tutorial series!
-- [ ] Fix the space leaks that are probably in there.
-- [ ] Stack templates.
-- [ ] Get this baby onto hackage.
