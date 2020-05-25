@@ -101,3 +101,17 @@ executed from stack. To run `parallelcircles` try:
 ```sh
 stack exec parallelcircles-exe
 ```
+
+### Making a new turtle template project
+
+Using stack, you can create your own `worldturtle` project by using the provided
+template.
+
+To create and run your own project, use the following commands to get setup:
+
+```sh
+stack new my-new-project FortOyer/worldturtle
+cd my-new-project
+stack build
+stack exec my-new-project
+```
