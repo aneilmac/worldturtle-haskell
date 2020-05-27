@@ -210,8 +210,8 @@ drawCircle_ !p !radius !startAngle !endAngle !pSize !pColor =
  translate (fst p) (snd p) $ rotate (180 - startAngle)
                            $ translate (-radius) 0
                            $ color pColor
-                           $ rotate (if radius >= 0 then 0 else 180)
-                           $ thickArc 0 (endAngle) radius pSize
+                           $ scale (if radius >= 0 then 1 else -1) 1
+                           $ thickArc 0 (endAngle) (abs radius) pSize
 
 -- Calculates the next position of a turtle on a circle.
 calculateNewPointC_ :: P.Point -- ^ Point on edge of circle
@@ -220,14 +220,11 @@ calculateNewPointC_ :: P.Point -- ^ Point on edge of circle
                     -> Float -- ^ Rotation amount about radius in degrees
                     -> P.Point -- ^ Resulting new point
 calculateNewPointC_ !p !radius !startAngle !angle = (px, py)
-  where !px = fst p - (radius * (cA - cS))
-        !py = snd p - (radius * (sA - sS))
+  where !px = fst p - (radius * (cos a - cos s))
+        !py = snd p - (radius * (sin a - sin s))
         !s = P.degToRad startAngle
-        !a = P.degToRad $ angle + startAngle
-        !cS = cos s
-        !sS = sin s
-        !cA = cos a
-        !sA = sin a
+        !a = P.degToRad $ if radius >= 0 then angle + startAngle 
+                                         else startAngle - angle
 
 -- | Draw an arc with a given @radius@. The center is @radius@ units left of the
 --   @turtle@ if positive. Otherwise  @radius@ units right of the @turtle@ if 
@@ -244,7 +241,7 @@ circle  :: Float -- ^ Radius of the circle.
 circle !radius !r turtle = TurtleCommand $ do
   t <- tData_ turtle
   let !r' = P.normalizeHeading r
-  animate' (radius * P.degToRad r') (t ^. T.speed) $ \ q -> do
+  animate' (abs radius * P.degToRad r') (t ^. T.speed) $ \ q -> do
     let !startAngle = t ^. T.heading + 90
     let !p = t ^. T.position
     let !angle = r' * q
@@ -254,7 +251,10 @@ circle !radius !r turtle = TurtleCommand $ do
 
     -- Update the turtle with the new values.
     let ts = turtLens_ turtle
-    ts . T.heading .= (P.normalizeHeading $ startAngle - 90 + angle)
+    ts . T.heading .= P.normalizeHeading (if radius >= 0
+                                          then startAngle - 90 + angle
+                                          else startAngle - 90 - angle)
+    
 
     let !p' = calculateNewPointC_ p radius startAngle angle
     ts . T.position .= p'

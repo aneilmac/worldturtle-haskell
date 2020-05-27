@@ -10,8 +10,8 @@ Welcome to Hello Worldturtle's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   lessons/setting-up
-   lessons/worldturtle-tour
+   content/setting-up
+   content/worldturtle-tour
 
 
 Indices and tables

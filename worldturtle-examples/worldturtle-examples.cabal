@@ -134,3 +134,18 @@ executable hilbert-exe
     -Wall
     -threaded
     -rtsopts
+
+executable clock-exe
+  main-is: Main.hs
+  hs-source-dirs: clock
+  build-depends:
+      base
+    , gloss
+    , worldturtle
+    , time
+  default-language: Haskell2010
+  ghc-options:
+    -O2
+    -Wall
+    -threaded
+    -rtsopts

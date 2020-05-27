@@ -9,7 +9,7 @@ What are Turtles?
 Turtles are programmable cursors that when given a few simple commands can draw
 cool, complex shapes! 
 
-.. figure:: physical_turtle_draw.jpg
+.. figure:: /_static/images/physical_turtle_draw.jpg
   :width: 300px
   :figclass: align-center
   :alt: Robot turtle drawing on paper.
@@ -22,20 +22,12 @@ Turtle graphics lends themselves well to Haskell concepts like recursion and
 monads. This series is a collection of tutorials for the beginner to learn
 Haskell using the WorldTurtle module.
 
-.. figure:: branch_output.png
+.. figure:: /_static/images/branch_output.gif
   :width: 300px
   :figclass: align-center
   :alt: Turtle graphics drawing a tree.
 
   A tree drawn recursively using turtle graphics.
-
-
-****************************************
-Why should I learn Haskell with turtles?
-****************************************
-
-If you are struggling with certain Haskell concepts, then hopefully seeing how
-they play out visually will help you understand the processes involved.
 
 **********
 Off we go!

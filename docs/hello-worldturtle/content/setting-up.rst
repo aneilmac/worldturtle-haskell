@@ -97,7 +97,7 @@ Once building is complete, we can run the project!
 If all goes well, you should see a new window appear with output that looks like
 this:
 
-.. image:: first_project.png
+.. image:: /_static/images/first_project.png
   :width: 400
   :alt: Screenshot of first basic turtle project.
 
