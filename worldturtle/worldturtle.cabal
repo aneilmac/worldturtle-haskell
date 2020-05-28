@@ -41,6 +41,7 @@ source-repository head
 library
   exposed-modules:
       Graphics.WorldTurtle
+      Graphics.WorldTurtle.Color
       Graphics.WorldTurtle.Commands
       Graphics.WorldTurtle.Internal.Commands
       Graphics.WorldTurtle.Internal.Coords
@@ -52,6 +53,7 @@ library
     , containers >=0.6.2 && < 0.7
     , gloss >=1.13.1 && < 1.14
     , lens >=4.18.1 && < 4.20
+    , matrix >= 0.3.6 && < 0.4
     , mtl >=2.2.2 && < 2.3
   default-language: Haskell2010
   ghc-options: 

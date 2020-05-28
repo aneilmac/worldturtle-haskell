@@ -13,6 +13,7 @@ main :: IO ()
 main = do
   localTime <- localTimeOfDay <$> 
                   (liftM2 utcToLocalTime) getCurrentTimeZone getCurrentTime
+ 
   runTurtle $ do
     drawFace
 
@@ -29,6 +30,7 @@ makeHand :: Color -> Float -> Float -> Float -> TurtleCommand Turtle
 makeHand c radius time offset = do
   t <-makeTurtle' (0, radius) east c
   setRepresentation (G.color c $ G.circleSolid 10) t
+  setPenDown False t
   
   setSpeed 0 t 
   circle (-radius) offset t
@@ -41,7 +43,7 @@ drawFace = do
   t <- makeTurtle' (0, -clockRadius) east black
   setSpeed 0 t -- Instant draw
   setVisible False t
-  forM_ ([0,5..255] :: [Int]) $ \time -> do
+  forM_ ([0,5..355] :: [Int]) $ \time -> do
     left 90 t
     setPenDown True t
     let l = if time `mod` 15 == 0 then 20 else 10

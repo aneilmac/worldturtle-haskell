@@ -21,18 +21,21 @@ import Graphics.Gloss.Geometry.Angle as GAngle
 lerp :: Float -> Point -> Point -> Point
 lerp !l !a !b =  ((1 P.- l) `mulSV` a) + (l `mulSV` b)
 
--- | Return a valid heading value between (0, 360).
+-- | Return a valid heading value between (0, 360].
+--   We want 360 to be 360 (full rotation).
+--   We want 361 to be 1 (wraparound rotation).
+--   Special case: we want 0 to be 0 (no rotation). Though really 0 is equal to
+--   360 we will let this special case slide as it helps in our time elapsed 
+--   calculations.
 normalizeHeading :: Float -> Float
-normalizeHeading !f
-  | f < 0     = normalizeHeading (f P.+ r)
-  | f > r     = normalizeHeading (f P.- r)
-  | otherwise = f
-  where r = 360.0
+normalizeHeading 0 = 0
+normalizeHeading f = let (n, b) = properFraction f :: (Int, Float)
+                         f' = fromIntegral (n `rem` 360) P.+ b
+                      in if f' <= 0 then f' P.+ 360 else f'
 
--- | Return a valid heading value between (-180, 180).
+--- | Return a valid heading value between (-180, 180].
 normalizeDirection :: Float -> Float
-normalizeDirection !f
-  | f < -r     = normalizeHeading (f P.+ r)
-  | f >  r     = normalizeHeading (f P.- r)
-  | otherwise = f
-  where r = 180.0
+normalizeDirection (-180) = -180
+normalizeDirection !f = let (n, b) = properFraction f :: (Int, Float)
+                            !f' = fromIntegral (n `rem` 180) P.+  b
+                         in if f' <= -180 then f' P.+ 360 else f'

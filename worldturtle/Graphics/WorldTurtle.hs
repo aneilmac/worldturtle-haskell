@@ -23,17 +23,17 @@ module Graphics.WorldTurtle
      -- * Further documentation
      , module Graphics.WorldTurtle.Commands
      , module Graphics.WorldTurtle.Shapes
-     , module Graphics.Gloss.Data.Color
+     , module Graphics.WorldTurtle.Color
      ) where
 
 import Control.Applicative ((<|>))
 
-import Graphics.Gloss.Data.Color
 import Graphics.Gloss.Data.Display (Display (..))
 import qualified Graphics.Gloss.Data.ViewState as G
 import qualified Graphics.Gloss.Data.ViewPort as G
 import qualified Graphics.Gloss.Interface.Pure.Game as G
 
+import Graphics.WorldTurtle.Color
 import Graphics.WorldTurtle.Commands
 import Graphics.WorldTurtle.Internal.Sequence (renderTurtle)
 import Graphics.WorldTurtle.Internal.Commands (TurtleCommand, seqT)

@@ -5,8 +5,6 @@ module Main where
 import Graphics.Gloss.Geometry.Angle (degToRad)
 import Graphics.WorldTurtle
 
-import HueShift
-
 hilbert :: Int -> Float -> Float -> Turtle -> TurtleCommand ()
 hilbert 0 _ _ _ = pure ()
 hilbert level angle lengthStep t = do

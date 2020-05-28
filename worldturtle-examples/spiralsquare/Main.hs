@@ -7,8 +7,6 @@ import Control.Monad (forM_)
 import Graphics.Gloss.Geometry.Angle (degToRad)
 import Graphics.WorldTurtle
 
-import HueShift
-
 forwards :: [Float]
 forwards = take 400 $ map (+1) [0, 0.75..]
 

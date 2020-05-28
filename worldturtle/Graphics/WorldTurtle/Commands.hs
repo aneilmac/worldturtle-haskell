@@ -53,6 +53,7 @@ module Graphics.WorldTurtle.Commands
   , setVisible
   -- * Canvas commands.
   , clear
+  , sleep
   -- * Common constants
   , east
   , north
@@ -223,7 +224,7 @@ calculateNewPointC_ !p !radius !startAngle !angle = (px, py)
   where !px = fst p - (radius * (cos a - cos s))
         !py = snd p - (radius * (sin a - sin s))
         !s = P.degToRad startAngle
-        !a = P.degToRad $ if radius >= 0 then angle + startAngle 
+        !a = P.degToRad $ if radius >= 0 then startAngle + angle
                                          else startAngle - angle
 
 -- | Draw an arc with a given @radius@. The center is @radius@ units left of the
@@ -410,6 +411,11 @@ setRepresentation = setter_ T.representation
 -- | Clears all drawings form the canvas. Does not alter any turtle's state.
 clear :: TurtleCommand ()
 clear = TurtleCommand $ pics .= []
+
+-- | Sleep for a given amount of time in seconds. When sleeping no animation 
+--   runs. A negative value will be clamped to @0@.
+sleep :: Float -> TurtleCommand ()
+sleep = TurtleCommand . decrementSimTime . max 0
 
 -- | @90@ degrees.
 north :: Float
