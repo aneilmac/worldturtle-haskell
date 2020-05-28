@@ -9,20 +9,6 @@
         "kind": "build",
         "isDefault": true
       }
-    },
-    {
-      "label": "sphinx build",
-      "type": "shell",
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      },
-      "windows": {
-        "command" : "./docs/hello-worldturtle/make html"
-      },
-      "linux": {
-        "command": "cd ./docs/hello-worldturtle && make html"
-      }
     }
   ]
 }
