@@ -53,6 +53,7 @@ parallel as opposed to the default of in sequence. Here the [parallel/serial com
 | [branch](worldturtle-examples/branch/Main.hs) | <img src="worldturtle-examples/branch/output.png" width="300"/> |
 | [spiralsquare](worldturtle-examples/spiralsquare/Main.hs) | <img src="worldturtle-examples/spiralsquare/output.png" width="300"/> |
 | [hilbert](worldturtle-examples/hilbert/Main.hs) | <img src="worldturtle-examples/hilbert/output.png" width="300"/> |
+| [clock](worldturtle-examples/clock/Main.hs) | <img src="worldturtle-examples/clock/output.png" width="300"/> |
 
 ## Interactive Controls
 

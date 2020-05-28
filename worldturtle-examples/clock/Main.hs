@@ -1,12 +1,17 @@
+{-| This more unusual example shows how to render an animated clock showing the
+    current time in hours minutes and seconds.
+-}
 module Main where
 
 import Control.Monad (liftM2, forM_, forever)
 
 import Data.Time.Clock (getCurrentTime)
+
 import Data.Time.LocalTime (TimeOfDay (..), getCurrentTimeZone, utcToLocalTime
                            , localTimeOfDay)
 
 import Graphics.WorldTurtle
+
 import qualified Graphics.Gloss.Data.Picture as G
 
 main :: IO ()
@@ -29,11 +34,13 @@ moveHand radius t = forever $ circle (-radius) 360 t
 makeHand :: Color -> Float -> Float -> Float -> TurtleCommand Turtle
 makeHand c radius time offset = do
   t <-makeTurtle' (0, radius) east c
-  setRepresentation (G.color c $ G.circleSolid 10) t
+  setRepresentation (G.color c $ G.pictures [ G.line [(0, 0), (0, -radius)]
+                                            , G.circleSolid 10
+                                            ]) t
   setPenDown False t
   
-  setSpeed 0 t 
-  circle (-radius) offset t
+  setSpeed 0 t -- Instant draw
+  circle (-radius) offset t -- Catch the hand up to where it should be.
   
   setSpeed (pi * 2 * radius / time) t
   return t
@@ -54,17 +61,17 @@ drawFace = do
     right 90 t
     circle clockRadius 5 t
 
-secsRadius :: Float
-secsRadius = 70
-
-minsRadius :: Float
-minsRadius = 90
-
-hoursRadius :: Float
-hoursRadius = 110
-
 clockRadius :: Float
 clockRadius = 130
+
+secsRadius :: Float
+secsRadius = 120
+
+minsRadius :: Float
+minsRadius = 100
+
+hoursRadius :: Float
+hoursRadius = 70
 
 secsInMinute :: Float
 secsInMinute = 60
