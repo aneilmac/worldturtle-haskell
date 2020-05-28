@@ -34,6 +34,7 @@ module Graphics.WorldTurtle.Commands
   , home
   , setHeading
   , setSpeed
+  , setRotationSpeed
   -- * Styling commands.
   , stamp
   , representation
@@ -41,6 +42,7 @@ module Graphics.WorldTurtle.Commands
   , position
   , heading
   , speed
+  , rotationSpeed
   , penColor
   , penDown
   , penSize
@@ -132,16 +134,6 @@ backward !d = forward (-d)
 bk :: Float -> Turtle -> TurtleCommand ()
 bk = backward
 
--- | Turn a turtle right by the given degrees amount.
-right :: Float -- ^ Rotation amount to apply to turtle.
-      -> Turtle -- ^ The turtle to rotate.
-      -> TurtleCommand ()
-right !r = left (-r)
-
--- | Shorthand for `right`.
-rt :: Float -> Turtle -> TurtleCommand ()
-rt = right
-
 calculateNewPointF_ :: P.Point -- ^ Starting point
                     -> Float -- ^ Distance
                     -> Float -- ^ Heading in degrees.
@@ -180,23 +172,40 @@ stamp :: Turtle -- ^ The turtle with the shape to be copied.
       -> TurtleCommand ()
 stamp turtle = TurtleCommand $ tData_ turtle >>= addPicture . T.drawTurtle 
 
+-- | Turn a turtle right by the given degrees amount.
+right :: Float -- ^ Rotation amount to apply to turtle.
+      -> Turtle -- ^ The turtle to rotate.
+      -> TurtleCommand ()
+right = rotateTo_ True
+
+-- | Shorthand for `right`.
+rt :: Float -> Turtle -> TurtleCommand ()
+rt = right
+
 -- | Turn a turtle left by the given degrees amount.
 left :: Float -- ^ Rotation amount to apply to turtle.
      -> Turtle -- ^ The turtle to rotate.
      -> TurtleCommand ()
-left !r turtle = TurtleCommand $ do
-    t <- tData_ turtle
-    let r' = P.normalizeDirection r
-    animate' (P.degToRad r') (t ^. T.speed) $ \q -> do
-      let !h = t ^. T.heading
-      --let q' = if r > 0 then q else -q
-      let !newHeading = P.normalizeHeading $ h + q * r'
-      --  Get new heading via percentage
-      turtLens_ turtle . T.heading .= newHeading
+left = rotateTo_ False
 
 -- | Shorthand for `left`.
 lt :: Float -> Turtle -> TurtleCommand ()
 lt = left
+
+rotateTo_ :: Bool -- ^ Bias decides in which direction rotation happens.
+          -> Float -- ^ Amount to rotate by
+          -> Turtle -- Turtle to modify.
+          -> TurtleCommand ()
+rotateTo_  rightBias !r turtle = TurtleCommand $ do
+    t <- tData_ turtle
+    let r' = P.normalizeHeading r
+    animate' (P.degToRad r') (t ^. T.rotationSpeed) $ \q -> do
+      let !h = t ^. T.heading
+      --let q' = if r > 0 then q else -q
+      let !newHeading = P.normalizeHeading $ if rightBias then h - q * r'
+                                                          else h + q * r'
+      --  Get new heading via percentage
+      turtLens_ turtle . T.heading .= newHeading
 
 -- | Draws an arc starting from a given starting point on the edge of the
 --   circle.
@@ -381,6 +390,22 @@ setSpeed :: Float -- ^ New speed.
          -> Turtle -- ^ Turtle to modify.
          -> TurtleCommand ()
 setSpeed = setter_ T.speed
+
+-- | Returns whether the turtle's current rotation speed.
+--   Rotation speed is is the speed in seconds it takes to do a full revolution.
+--   A speed of 0 is equivalent to no animation being performed and instant 
+--   rotation.
+-- The default value is @20@.
+rotationSpeed :: Turtle -- ^ Turtle to query.
+              -> TurtleCommand Float
+rotationSpeed = getter_ 0 T.rotationSpeed
+
+-- | Sets the turtle's rotation speed.
+--   See `rotationSpeed`.
+setRotationSpeed :: Float -- ^ New rotation speed.
+                 -> Turtle -- ^ Turtle to modify.
+                 -> TurtleCommand ()
+setRotationSpeed = setter_ T.rotationSpeed
 
 -- | Gets the turtle's representation as a Gloss `Picture`.
 representation :: Turtle -- ^ Turtle to query.

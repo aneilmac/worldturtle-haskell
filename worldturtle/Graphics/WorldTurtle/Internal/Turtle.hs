@@ -10,6 +10,7 @@ module Graphics.WorldTurtle.Internal.Turtle
   , representation
   , penDown
   , speed
+  , rotationSpeed
   , Graphics.WorldTurtle.Internal.Turtle.scale
   , penColor
   , penSize
@@ -32,6 +33,7 @@ data TurtleData = TurtleData
     , _representation :: !Picture
     , _penDown :: !Bool
     , _speed :: !Float
+    , _rotationSpeed :: Float
     , _scale :: !Float
     , _penColor :: !Color
     , _penSize :: !Float
@@ -47,6 +49,7 @@ defaultTurtle = TurtleData
     , _representation = turtleArrow black blue
     , _penDown = True
     , _speed = 200
+    , _rotationSpeed = 10
     , _scale = 1
     , _penColor = black
     , _penSize = 2

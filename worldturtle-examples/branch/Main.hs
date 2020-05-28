@@ -29,4 +29,7 @@ branch size ratio angle iterations t = do
         sr  = size * ratio
 
 main :: IO ()
-main = runTurtle $ makeTurtle >>= branch 5 0.7 30 5
+main = runTurtle $ do
+  t <- makeTurtle 
+  setRotationSpeed 50 t
+  branch 5 0.7 30 5 t

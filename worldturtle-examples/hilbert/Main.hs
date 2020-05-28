@@ -33,6 +33,7 @@ main :: IO ()
 main = runTurtle $ do
   t <- makeTurtle' (-200, -200) east red 
   setSpeed 2000 t
+  setRotationSpeed 0 t
   setVisible False t
   hilbert 6 90 6 t
 

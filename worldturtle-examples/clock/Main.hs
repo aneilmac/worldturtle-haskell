@@ -49,6 +49,7 @@ drawFace ::  TurtleCommand ()
 drawFace = do
   t <- makeTurtle' (0, -clockRadius) east black
   setSpeed 0 t -- Instant draw
+  setRotationSpeed 0 t -- Instant draw
   setVisible False t
   forM_ ([0,5..355] :: [Int]) $ \time -> do
     left 90 t

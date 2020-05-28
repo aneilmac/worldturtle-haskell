@@ -7,7 +7,6 @@ module Graphics.WorldTurtle.Internal.Coords
   , module GAngle
   , lerp
   , normalizeHeading
-  , normalizeDirection
   ) where
 
 import Prelude hiding ((-), (+))
@@ -32,10 +31,3 @@ normalizeHeading 0 = 0
 normalizeHeading f = let (n, b) = properFraction f :: (Int, Float)
                          f' = fromIntegral (n `rem` 360) P.+ b
                       in if f' <= 0 then f' P.+ 360 else f'
-
---- | Return a valid heading value between (-180, 180].
-normalizeDirection :: Float -> Float
-normalizeDirection (-180) = -180
-normalizeDirection !f = let (n, b) = properFraction f :: (Int, Float)
-                            !f' = fromIntegral (n `rem` 180) P.+  b
-                         in if f' <= -180 then f' P.+ 360 else f'

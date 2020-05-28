@@ -15,6 +15,7 @@ spiral t = do
   setPenColor cyan t
   setPenSize 1.5 t
   setSpeed 500 t
+  setRotationSpeed 0 t -- instant turns
   forM_ forwards $ \ f -> do
     forward f t
     left 89.5 t
