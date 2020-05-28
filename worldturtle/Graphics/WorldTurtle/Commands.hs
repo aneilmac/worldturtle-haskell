@@ -339,7 +339,7 @@ setPenColor = setter_ T.penColor
 
 -- | Returns whether the turtle's pen is down.
 --   When the turtle's pen is down it will draw a line when it moves.
---   The default value is @true@.
+--   The default value is @True@.
 penDown :: Turtle -- ^ Turtle to query.
          -> TurtleCommand Bool -- ^ True if pen is down, false if not.
 penDown = getter_ False T.penDown
@@ -365,7 +365,7 @@ setPenSize :: Float -- ^ New size for turtle's pen.
 setPenSize = setter_ T.penSize
 
 -- | Returns whether the turtle is visible.
---   The default value is @true@.
+--   The default value is @True@.
 visible :: Turtle -- ^ Turtle to query.
         -> TurtleCommand Bool -- ^ @True@ if turtle is visible, @False@ if not.
 visible = getter_ False T.visible

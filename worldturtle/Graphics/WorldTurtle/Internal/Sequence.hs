@@ -191,12 +191,12 @@ combineSequence a b = do
   let (Just !bVal') = bVal
   return $ aVal' <> bVal'
 
--- | Runs two items in sequence, returns the result of `a` if `a` passes,
---   otherwise returns the results of `b`. The implication of this is that only
+-- | Runs two items in sequence, returns the result of /a/ if /a/ passes,
+--   otherwise returns the results of /b/. The implication of this is that only
 --   the result of a will be returned while animating, and b when animation is
 --   finished.
-alternateSequence :: SequenceCommand b a -- ^ Sequence @a@ to run.
-                  -> SequenceCommand b a -- ^ Sequence @b@ to run.
+alternateSequence :: SequenceCommand b a -- ^ Sequence /a/ to run.
+                  -> SequenceCommand b a -- ^ Sequence /b/ to run.
                   -> SequenceCommand b a
 alternateSequence a b = do
   (!aVal, !bVal) <- runParallel a b
