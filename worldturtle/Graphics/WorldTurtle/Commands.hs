@@ -9,12 +9,13 @@ Maintainer  : FortOyer@hotmail.co.uk
 Stability   : experimental
 Portability : POSIX
 
-This module is a collection of all the commands used to manipulate a turtle!
+This module contains all commands used to create, move and 
+manipulate a turtle.
 
 -}
 module Graphics.WorldTurtle.Commands
   (
-  -- * Setting up a turtle.
+  -- * Creating a turtle.
     Turtle
   , makeTurtle
   , makeTurtle'
@@ -38,7 +39,7 @@ module Graphics.WorldTurtle.Commands
   -- * Styling commands.
   , stamp
   , representation
-  -- * Tell turtle's state.
+  -- * Query turtle's state.
   , position
   , heading
   , speed
@@ -47,7 +48,7 @@ module Graphics.WorldTurtle.Commands
   , penDown
   , penSize
   , visible
-  -- * Drawing state.
+  -- * Set rendering state.
   , setPenColor
   , setPenDown
   , setPenSize
@@ -91,7 +92,7 @@ manipulated! For example, to create a turtle and then move the turtle forward:
       forward 90 t
    @
 
-The default turtle starts at position (0, 0) and is orientated @North@.
+The default turtle starts at position (0, 0) and is orientated `north`.
 
 -}
 makeTurtle :: TurtleCommand Turtle
@@ -201,7 +202,6 @@ rotateTo_  rightBias !r turtle = TurtleCommand $ do
     let r' = P.normalizeHeading r
     animate' (P.degToRad r') (t ^. T.rotationSpeed) $ \q -> do
       let !h = t ^. T.heading
-      --let q' = if r > 0 then q else -q
       let !newHeading = P.normalizeHeading $ if rightBias then h - q * r'
                                                           else h + q * r'
       --  Get new heading via percentage
@@ -287,6 +287,8 @@ home turtle = TurtleCommand $ do
 -- | Warps the turtle to a new position.
 --   The turtle jumps to this new position with no animation. If the pen is down
 --   then a line is drawn.
+--   
+--   This does not affect the turtle's heading.
 goto :: P.Point -- ^ Position to warp to.
      -> Turtle -- ^ Turtle to modify.
      -> TurtleCommand ()
@@ -318,7 +320,7 @@ heading = getter_ 0 T.heading
 
 -- | Sets the turtle's heading. See `heading`.
 setHeading :: Float -- ^ Heading to apply. 
-           -> Turtle -- ^ Turtle to set.
+           -> Turtle -- ^ Turtle to modify.
            -> TurtleCommand ()
 setHeading = setter_ T.heading
 
@@ -365,7 +367,7 @@ setPenSize = setter_ T.penSize
 -- | Returns whether the turtle is visible.
 --   The default value is @true@.
 visible :: Turtle -- ^ Turtle to query.
-        -> TurtleCommand Bool -- ^ True if turtle is visible,false if not.
+        -> TurtleCommand Bool -- ^ @True@ if turtle is visible, @False@ if not.
 visible = getter_ False T.visible
 
 -- | Sets the turtle's visibility.
@@ -375,13 +377,13 @@ setVisible :: Bool -- ^ New state for visible flag.
            -> TurtleCommand ()
 setVisible = setter_ T.visible
 
--- | Returns whether the turtle's current speed.
+-- | Returns the turtle's current speed.
 --   Speed is is @distance@ per second.
 --   A speed of 0 is equivalent to no animation being performed and instant 
---   drawing.
+--   movement.
 -- The default value is @200@.
 speed :: Turtle -- ^ Turtle to query.
-      -> TurtleCommand Float
+      -> TurtleCommand Float -- ^ Speed of turtle.
 speed = getter_ 0 T.speed
 
 -- | Sets the turtle's speed.
@@ -391,13 +393,13 @@ setSpeed :: Float -- ^ New speed.
          -> TurtleCommand ()
 setSpeed = setter_ T.speed
 
--- | Returns whether the turtle's current rotation speed.
+-- | Returns the turtle's current rotation speed.
 --   Rotation speed is is the speed in seconds it takes to do a full revolution.
 --   A speed of 0 is equivalent to no animation being performed and instant 
 --   rotation.
 -- The default value is @20@.
 rotationSpeed :: Turtle -- ^ Turtle to query.
-              -> TurtleCommand Float
+              -> TurtleCommand Float -- ^ Rotation speed of turtle.
 rotationSpeed = getter_ 0 T.rotationSpeed
 
 -- | Sets the turtle's rotation speed.
@@ -407,12 +409,12 @@ setRotationSpeed :: Float -- ^ New rotation speed.
                  -> TurtleCommand ()
 setRotationSpeed = setter_ T.rotationSpeed
 
--- | Gets the turtle's representation as a Gloss `Picture`.
+-- | Gets the turtle's representation as a `Picture`.
 representation :: Turtle -- ^ Turtle to query.
                -> TurtleCommand Picture
 representation = getter_ blank T.representation
 
-{- | Sets the turtle's representation to a Gloss `Picture`.
+{- | Sets the turtle's representation to a `Picture`.
    See `representation`.
    For example, to set the turtle as a red circle:
    
@@ -428,8 +430,8 @@ representation = getter_ blank T.representation
       forward 90 t
    @
 -}
-setRepresentation :: Picture
-                  -> Turtle -- ^ Turtle to mutate.
+setRepresentation :: Picture -- ^ Picture to apply.
+                  -> Turtle -- ^ Turtle to modify.
                   -> TurtleCommand ()
 setRepresentation = setter_ T.representation
 

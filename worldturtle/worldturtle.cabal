@@ -17,7 +17,7 @@ tested-with: GHC ==8.8.3 || ==8.10.3
 description: 
   Have you ever heard of [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics)?
   .
-  No? Think of a @turtle@ as a cursor you can program to draw graphics! 
+  If not, then think of a @turtle@ as a cursor you can program to draw! 
   .
   Turtle graphics are a fantastic introduction to the world of
     programming and to the syntax of a new programming language.

@@ -10,6 +10,10 @@ Portability : POSIX
 "Graphics.WorldTurtle" is a module for writing and rendering turtle graphics
 in Haskell.
 
+Take a look at the
+     [examples](https://github.com/FortOyer/worldturtle-haskell#examples) on
+Github!
+
 -}
 module Graphics.WorldTurtle
      ( 
