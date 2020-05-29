@@ -1,7 +1,7 @@
 cabal-version: 2.0
 
 name:           worldturtle-examples
-version:        0.1.0.0
+version:        0.1.2.0
 description:    Examples using the worldturtle library
 category:       teaching
 homepage:       https://github.com/FortOyer/worldturtle-haskell#readme
@@ -73,9 +73,9 @@ executable parallelcircles-exe
     -threaded
     -rtsopts
 
-executable branch-exe
+executable tree-exe
   main-is: Main.hs
-  hs-source-dirs: branch
+  hs-source-dirs: tree
   build-depends:
       base
     , gloss
@@ -137,6 +137,20 @@ executable clock-exe
     , gloss
     , worldturtle
     , time
+  default-language: Haskell2010
+  ghc-options:
+    -O2
+    -Wall
+    -threaded
+    -rtsopts
+
+executable lsystem-exe
+  main-is: Main.hs
+  hs-source-dirs: lsystem
+  build-depends:
+      base
+    , gloss
+    , worldturtle
   default-language: Haskell2010
   ghc-options:
     -O2

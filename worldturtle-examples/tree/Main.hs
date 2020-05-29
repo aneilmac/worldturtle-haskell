@@ -6,8 +6,8 @@ import Control.Monad (when)
 
 import Graphics.WorldTurtle
 
-branch :: Float -> Float -> Float -> Int -> Turtle -> TurtleCommand ()
-branch size ratio angle iterations t = do
+tree :: Float -> Float -> Float -> Int -> Turtle -> TurtleCommand ()
+tree size ratio angle iterations t = do
   setPenDown True t
   setPenSize size t
   forward s20 t
@@ -15,10 +15,10 @@ branch size ratio angle iterations t = do
  
   when (iterations > 0) $ do
     left angle t
-    branch sr ratio angle (iterations - 1) t
+    tree sr ratio angle (iterations - 1) t
 
     right (angle * 2) t
-    branch sr ratio angle (iterations - 1) t
+    tree sr ratio angle (iterations - 1) t
 
     left angle t
 
@@ -32,4 +32,4 @@ main :: IO ()
 main = runTurtle $ do
   t <- makeTurtle 
   setRotationSpeed 50 t
-  branch 5 0.7 30 5 t
+  tree 5 0.7 30 5 t

@@ -50,10 +50,11 @@ parallel as opposed to the default of in sequence. Here the [parallel/serial com
 | [star](worldturtle-examples/star/Main.hs) | <img src="worldturtle-examples/star/output.png" width="300"/> |
 | [parallelserialcomparison](worldturtle-examples/parallelserialcomparison/Main.hs) | <img src="worldturtle-examples/parallelserialcomparison/output.png" width="300"/> |
 | [parallelcircles](worldturtle-examples/parallelcircles/Main.hs) | <img src="worldturtle-examples/parallelcircles/output.png" width="300"/> |
-| [branch](worldturtle-examples/branch/Main.hs) | <img src="worldturtle-examples/branch/output.png" width="300"/> |
+| [tree](worldturtle-examples/tree/Main.hs) | <img src="worldturtle-examples/tree/output.png" width="300"/> |
 | [spiralsquare](worldturtle-examples/spiralsquare/Main.hs) | <img src="worldturtle-examples/spiralsquare/output.png" width="300"/> |
 | [hilbert](worldturtle-examples/hilbert/Main.hs) | <img src="worldturtle-examples/hilbert/output.png" width="300"/> |
 | [clock](worldturtle-examples/clock/Main.hs) | <img src="worldturtle-examples/clock/output.png" width="300"/> |
+| [lsystem](worldturtle-examples/lsystem/Main.hs) | <img src="worldturtle-examples/lsystem/output.png" width="300"/> |
 
 ## Interactive Controls
 
@@ -68,7 +69,7 @@ parallel as opposed to the default of in sequence. Here the [parallel/serial com
 
 ## Prerequisites
 
-To build this project you need `stack`, `ghci` and `cabal`. If you don't
+To build this project you need `stack` and `ghc`. If you don't
 already have these, then you can install them easily from the
 [Haskell Platform](https://www.haskell.org/platform/)!
 

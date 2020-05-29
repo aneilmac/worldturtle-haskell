@@ -1,5 +1,9 @@
 # Changelog for turtle-haskell
 
+## v0.1.2
+
+* Added the `branch` function.
+
 ## v0.1.1
 
 * Added `sleep` function.

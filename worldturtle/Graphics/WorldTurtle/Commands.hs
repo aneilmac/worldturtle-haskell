@@ -57,6 +57,7 @@ module Graphics.WorldTurtle.Commands
   -- * Canvas commands.
   , clear
   , sleep
+  , Graphics.WorldTurtle.Commands.branch
   -- * Common constants
   , east
   , north
@@ -443,6 +444,12 @@ clear = TurtleCommand $ pics .= []
 --   runs. A negative value will be clamped to @0@.
 sleep :: Float -> TurtleCommand ()
 sleep = TurtleCommand . decrementSimTime . max 0
+
+-- | Given a command, runs the command, then resets the turtle(s) state back to
+--   what the state was before the command was run. 
+branch :: TurtleCommand a -> TurtleCommand a
+branch (TurtleCommand p ) = TurtleCommand $ 
+  Graphics.WorldTurtle.Internal.Sequence.branch p
 
 -- | @90@ degrees.
 north :: Float

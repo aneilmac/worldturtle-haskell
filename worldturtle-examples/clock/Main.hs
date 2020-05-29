@@ -51,15 +51,13 @@ drawFace = do
   setSpeed 0 t -- Instant draw
   setRotationSpeed 0 t -- Instant draw
   setVisible False t
+  setPenDown False t
   forM_ ([0,5..355] :: [Int]) $ \time -> do
-    left 90 t
-    setPenDown True t
-    let l = if time `mod` 15 == 0 then 20 else 10
-    forward l t
-
-    setPenDown False t
-    backward l t
-    right 90 t
+    branch $ do
+      left 90 t
+      setPenDown True t
+      let l = if time `mod` 15 == 0 then 20 else 10
+      forward l t
     circle clockRadius 5 t
 
 clockRadius :: Float
