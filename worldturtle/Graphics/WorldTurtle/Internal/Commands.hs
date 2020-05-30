@@ -81,17 +81,6 @@ instance Applicative TurtleCommand where
 instance Monad TurtleCommand where
   (TurtleCommand a) >>= f = TurtleCommand $ \ t -> a t >>= \s -> seqT (f s) t
 
-instance Alternative TurtleCommand where
-  empty = TurtleCommand $ const failSequence
-  (<|>) (TurtleCommand a) (TurtleCommand b) = TurtleCommand $ \ t -> 
-    alternateSequence (a t) (b t)
-
-instance Semigroup a => Semigroup (TurtleCommand a) where
-  (TurtleCommand a) <> (TurtleCommand b) = TurtleCommand $ \ t -> 
-    combineSequence (a t) (b t)
-
-instance MonadPlus TurtleCommand
-
 instance MonadFail TurtleCommand where
   fail t = TurtleCommand $ \ _ -> do
     addPicture $ text t
