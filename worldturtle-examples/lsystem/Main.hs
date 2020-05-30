@@ -5,7 +5,7 @@ module Main where
 import Graphics.WorldTurtle
 
 tree :: Int -> TurtleCommand ()
-tree x = f x
+tree = f
   where f 0 = setPenColor red >> fd 10
         f y = g y' >> branch (lt 45 >> f y')
                    >> branch (rt 45 >> f y')

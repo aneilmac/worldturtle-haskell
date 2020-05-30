@@ -16,9 +16,9 @@ import qualified Graphics.Gloss.Data.Picture as G
 
 main :: IO ()
 main = do
-  localTime <- localTimeOfDay <$> 
-                  (liftM2 utcToLocalTime) getCurrentTimeZone getCurrentTime
- 
+  localTime <- localTimeOfDay <$> liftM2 utcToLocalTime 
+                                         getCurrentTimeZone 
+                                         getCurrentTime
   runWorld $ do
     drawFace
     s <- makeHand green  secsRadius  secsInMinute $ secsToDeg localTime
@@ -27,15 +27,15 @@ main = do
     moveHand secsRadius s <|> moveHand minsRadius m <|> moveHand hoursRadius h
 
 moveHand :: Float -> Turtle -> WorldCommand ()
-moveHand radius t = forever $ t >/>  circle (-radius)
+moveHand radius = run $ forever $ circle (-radius)
 
 makeHand :: Color -> Float -> Float -> Float -> WorldCommand Turtle
 makeHand c radius time offset = do
   t <- makeTurtle' (0, radius) east c
   t >/> do
-    setRepresentation (G.color c $ G.pictures [ G.line [(0, 0), (0, -radius)]
-                                              , G.circleSolid 10
-                                              ])
+    setRepresentation $ G.color c $ G.pictures [ G.line [(0, 0), (0, -radius)]
+                                               , G.circleSolid 10
+                                               ]
     setPenDown False
     setSpeed 0 -- Instant draw
     arc (-radius) offset -- Catch the hand up to where it should be.
@@ -80,10 +80,10 @@ secsInDay :: Float
 secsInDay = 86400
 
 secsToDeg :: TimeOfDay -> Float
-secsToDeg l = 360 * (realToFrac $  todSec l) / secsInMinute
+secsToDeg l = 360 * realToFrac (todSec l) / secsInMinute
 
 minsToDeg :: TimeOfDay -> Float
-minsToDeg l = 360 * (secsInMinute * (realToFrac $ todMin l)) / secsInHour
+minsToDeg l = 360 * secsInMinute * realToFrac (todMin l) / secsInHour
 
 hoursToDeg :: TimeOfDay -> Float
-hoursToDeg l = 720 * (secsInHour * (realToFrac $ todHour l)) / secsInDay
+hoursToDeg l = 720 * secsInHour * realToFrac (todHour l) / secsInDay

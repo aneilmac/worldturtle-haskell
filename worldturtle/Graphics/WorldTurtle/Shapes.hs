@@ -33,7 +33,7 @@ thickLine :: Point -- ^ Starting point.
           -> Point  -- ^ Ending point.
           -> Float -- ^ Line thickness.
           -> Picture -- ^ Produced line.
-thickLine a b t = polygon $ [a1, a2, b2, b1]
+thickLine a b t = polygon [a1, a2, b2, b1]
   where !v = b P.- a
         !angle = P.argV v
         !perpAngle = angle - (pi/2)
@@ -46,7 +46,7 @@ thickLine a b t = polygon $ [a1, a2, b2, b1]
         !b2 = b P.+ t'' P.+ t'
 
 outline_ :: Color -> Picture
-outline_ !c = color c $ translate (0) (-1) $ scale 1.4 1.4 $ fill_ c
+outline_ !c = color c $ translate 0 (-1) $ scale 1.4 1.4 $ fill_ c
 
 fill_ :: Color -> Picture
 fill_ !c = color c $ translate (-4) (-2) 

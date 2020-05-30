@@ -159,7 +159,8 @@ forward !d = TurtleCommand $ \ turtle -> do
       --  Get new endpoint via percentage
       let !startP = t ^. T.position
       let !midP = calculateNewPointF_ startP d (t ^. T.heading) q
-      when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
+       -- don't draw if pen isn't in down state
+      when (t ^. T.penDown) $ 
         addPicture $ color (t ^. T.penColor) 
                    $ thickLine startP midP (t ^. T.penSize)
         --  Draw line from startPoint to midPoint.
@@ -173,7 +174,7 @@ fd = forward
 -- | Stamp a copy of the turtle shape onto the canvas at the current turtle 
 --   position.
 stamp :: TurtleCommand ()
-stamp = TurtleCommand $ \ turtle -> tData_ turtle >>= addPicture . T.drawTurtle 
+stamp = TurtleCommand $ tData_ >=> (addPicture . T.drawTurtle)
 
 -- | Turn a turtle right by the given degrees amount.
 right :: Float -- ^ Rotation amount to apply to turtle.
@@ -228,11 +229,11 @@ drawCircle_ :: P.Point -- ^ Point on edge of circle to start from
             -> Color -- ^ Color of circle 
             -> Picture -- ^ Resulting circle
 drawCircle_ !p !radius !startAngle !endAngle !pSize !pColor = 
- translate (fst p) (snd p) $ rotate (180 - startAngle)
-                           $ translate (-radius) 0
-                           $ color pColor
-                           $ scale (if radius >= 0 then 1 else -1) 1
-                           $ thickArc 0 (endAngle) (abs radius) pSize
+ uncurry translate p $ rotate (180 - startAngle)
+                     $ translate (-radius) 0
+                     $ color pColor
+                     $ scale (if radius >= 0 then 1 else -1) 1
+                     $ thickArc 0 endAngle (abs radius) pSize
 
 -- Calculates the next position of a turtle on a circle.
 calculateNewPointC_ :: P.Point -- ^ Point on edge of circle
@@ -265,9 +266,10 @@ arc !radius !r = TurtleCommand $ \turtle -> do
     let !startAngle = t ^. T.heading + 90
     let !p = t ^. T.position
     let !angle = r' * q
-    when (t ^. T.penDown) $ do -- don't draw if pen isn't in down state
+    -- don't draw if pen isn't in down state
+    when (t ^. T.penDown) $ 
       addPicture $! drawCircle_ p radius startAngle angle 
-                    (t ^. T.penSize) (t ^. T.penColor)
+                                (t ^. T.penSize) (t ^. T.penColor)
 
     -- Update the turtle with the new values.
     let ts = turtLens_ turtle
@@ -470,7 +472,7 @@ turtLens_ :: Applicative f
           -> (T.TurtleData -> f T.TurtleData) 
           -> TSC b 
           -> f (TSC b) 
-turtLens_ t = turtles . at t . _Just
+turtLens_ t = turtles . ix t
 {-# INLINE turtLens_ #-}
 
 -- | This is a helper function for our getter commands.

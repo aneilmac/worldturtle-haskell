@@ -5,7 +5,7 @@ import Control.Monad (replicateM_) -- Required control flow functions.
 import Graphics.WorldTurtle
 
 drawSquare :: Turtle -> WorldCommand ()
-drawSquare t = run t $ replicateM_ 4 $ forward 90 >> right 90
+drawSquare = run $ replicateM_ 4 $ forward 90 >> right 90
 
 makeTurtles :: Point -> WorldCommand (Turtle, Turtle)
 makeTurtles p =  do

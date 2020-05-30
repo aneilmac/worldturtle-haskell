@@ -79,10 +79,10 @@ instance Applicative TurtleCommand where
     TurtleCommand $ \ t -> liftA2 f (a t) (b t)
 
 instance Monad TurtleCommand where
-  (TurtleCommand a) >>= f = TurtleCommand $ \ t ->  (a t) >>= \s -> seqT (f s) t
+  (TurtleCommand a) >>= f = TurtleCommand $ \ t -> a t >>= \s -> seqT (f s) t
 
 instance Alternative TurtleCommand where
-  empty = TurtleCommand $ \ _ -> failSequence
+  empty = TurtleCommand $ const failSequence
   (<|>) (TurtleCommand a) (TurtleCommand b) = TurtleCommand $ \ t -> 
     alternateSequence (a t) (b t)
 

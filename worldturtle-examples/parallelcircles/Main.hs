@@ -22,4 +22,4 @@ main = runWorld $ do
 
 -- Tells the turtle to make a loop then turn 5 degrees to the left!
 loop :: Turtle -> WorldCommand() 
-loop t = t >/> (circle 90 >> left 5)
+loop = run $ circle 90 >> left 5

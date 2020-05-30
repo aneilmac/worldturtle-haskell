@@ -103,7 +103,7 @@ setSimTime newTime = do
 -- See `setSimTime`.
 decrementSimTime :: Float -- ^ Value to subtract from store simulation time. 
                  -> SequenceCommand b ()
-decrementSimTime duration = simTime >>= setSimTime . (flip (-) duration)
+decrementSimTime duration = simTime >>= setSimTime . flip (-) duration
 
 -- | Given a picture, adds it to the picture list.
 addPicture :: Picture -- ^ Picture to add to our animation
@@ -138,7 +138,7 @@ renderTurtle c f = let (_, s) = processTurtle c (defaultTSC f)
                     in pictures $ s ^. pics ++ drawTurtles (s ^. turtles)
 
 drawTurtles :: Map Turtle TurtleData -> [Picture]
-drawTurtles m = fmap drawTurtle $ Map.elems m 
+drawTurtles m = drawTurtle <$> Map.elems m 
 
 generateTurtle :: SequenceCommand b Turtle
 generateTurtle = do
@@ -246,7 +246,7 @@ runParallel a b = do
   -- animating is concerned is the same as not succeeding at all!
   decrementSimTime 0
 
-  return $! (aVal, bVal)
+  return (aVal, bVal)
 
 -- | Calls our early exit and fails the callback. No calculations will be
 --   performed beyond this call.

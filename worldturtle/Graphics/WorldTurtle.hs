@@ -19,6 +19,7 @@ module Graphics.WorldTurtle
      ( 
      -- * Running the world
      -- $running
+     -- $interacting
        WorldCommand
      , runWorld
      , runTurtle
@@ -48,57 +49,6 @@ import Graphics.WorldTurtle.Internal.Commands (TurtleCommand, seqT
                                               , WorldCommand (..), seqW)
 import Graphics.WorldTurtle.Shapes
 
--- | `run` takes a `Turtle`, and a `TurtleCommand`. The command is applied
---   to the turtle, and the result of the computation is returned as a 
---   `WorldCommand`!
---
---  For example, to get a turtle's @(x, y)@ `position` one might write:
---
---  @
---    myCommand :: WorldCommand ()
---    myCommand = do
---      t <- makeTurtle
---      (x, y) <- run t position
---  @
---
--- Or to draw a right angle:
---
---  @
---    myCommand :: WorldCommand ()
---    myCommand = do
---      t <- makeTurtle
---      run t $ forward 10 >> right 90 >> forward 10
---  @
---
-run :: Turtle 
-    -> TurtleCommand a 
-    -> WorldCommand a
-run t commands = WorldCommand $ seqT commands t
-
--- | Infix version of `run`.
---   This is a convenience function.
--- 
---   To draw a right angle:
---
---  @
---    myCommand :: WorldCommand ()
---    myCommand = do
---      t <- makeTurtle
---      t >/> do 
---        forward 10
---        right 90
---        forward 10
---  @
---
-(>/>) :: Turtle -> TurtleCommand a -> WorldCommand a
-(>/>) = run
-infixl 1 >/>
-
-data World = World { elapsedTime :: !Float
-                   , running :: !Bool
-                   , state :: !G.ViewState 
-                   }
-
 {- | `runWorld` takes a `WorldCommand` and produces the animation in a new
      window! 
 
@@ -109,24 +59,6 @@ data World = World { elapsedTime :: !Float
          main :: IO ()
          main = runWorld yourOwnCoolCommand
      @
-
-     While running, you can interact with the window in the following way:
-
-     +------------------------------------------+-------------------+
-     | Action                                   | Interaction       |
-     +==========================================+===================+
-     | Pan the viewport.                        | Click and drag    |
-     +------------------------------------------+-------------------+
-     | Zoom in/out.                             |Mousewheel up/down |
-     +------------------------------------------+-------------------+
-     | Reset the viewport to initial position.  | Spacebar          |
-     +------------------------------------------+-------------------+
-     | Reset the animation.                     | @R@ key           |
-     +------------------------------------------+-------------------+
-     | Pause the animation.                     | @P@ key           |
-     +------------------------------------------+-------------------+
-     | Quit                                     | Escape key        |
-     +------------------------------------------+-------------------+
 -}
 runWorld :: WorldCommand () -- ^ Command sequence to execute
           -> IO ()
@@ -148,6 +80,62 @@ runWorld tc = G.play display white 30 defaultWorld iterateRender input timePass
          | running w = w { elapsedTime = f + elapsedTime w }
          | otherwise = w
 
+-- | This is a convenient simplification of `runWorld` where we implicitly
+--   create a single turtle and execute this.
+runTurtle :: TurtleCommand () -> IO ()
+runTurtle c = runWorld $ makeTurtle >>= run c
+
+-- | `run` takes a `Turtle`, and a `TurtleCommand`. The command is applied
+--   to the turtle, and the result of the computation is returned as a 
+--   `WorldCommand`!
+--
+--  For example, to get a turtle's @(x, y)@ `position` one might write:
+--
+--  @
+--    myCommand :: WorldCommand ()
+--    myCommand = do
+--      t <- makeTurtle
+--      (x, y) <- run t position
+--  @
+--
+-- Or to draw a right angle:
+--
+--  @
+--    myCommand :: WorldCommand ()
+--    myCommand = makeTurtle >>= run $ forward 10 >> right 90 >> forward 10
+--  @
+--
+run :: TurtleCommand a 
+    -> Turtle
+    -> WorldCommand a
+run c = WorldCommand . seqT c
+
+-- | Infix version of `run`.
+--   This is a convenience function.
+-- 
+--   To draw a right angle:
+--
+--  @
+--    myCommand :: WorldCommand ()
+--    myCommand = do
+--      t <- makeTurtle
+--      t >/> do 
+--        forward 10
+--        right 90
+--        forward 10
+--  @
+--
+-- Equivalent: @(>/>) = flip . run@
+--
+(>/>) :: Turtle -> TurtleCommand a -> WorldCommand a
+(>/>) = flip run
+infixl 4 >/>
+
+data World = World { elapsedTime :: !Float
+                   , running :: !Bool
+                   , state :: !G.ViewState 
+                   }
+
 defaultWorld :: World
 defaultWorld = World 0 True 
              $ G.viewStateInitWithConfig 
@@ -168,10 +156,26 @@ isPauseKey_ (G.EventKey (G.Char 'p') G.Down _ _)  = True
 isPauseKey_ (G.EventKey (G.Char 'P') G.Down _ _)  = True
 isPauseKey_ _ = False
 
--- | This is a convenient simplification of `runWorld` where we implicitly
---   create a single turtle and execute this.
-runTurtle :: TurtleCommand () -> IO ()
-runTurtle c = runWorld $ makeTurtle >>= \ t -> run t c
+{- $interacting
+
+   While running, you can interact with the window in the following way:
+   
+   +------------------------------------------+-------------------+
+   | Action                                   | Interaction       |
+   +==========================================+===================+
+   | Pan the viewport.                        | Click and drag    |
+   +------------------------------------------+-------------------+
+   | Zoom in/out.                             |Mousewheel up/down |
+   +------------------------------------------+-------------------+
+   | Reset the viewport to initial position.  | Spacebar          |
+   +------------------------------------------+-------------------+
+   | Reset the animation.                     | @R@ key           |
+   +------------------------------------------+-------------------+
+   | Pause the animation.                     | @P@ key           |
+   +------------------------------------------+-------------------+
+   | Quit                                     | Escape key        |
+   +------------------------------------------+-------------------+
+-}
 
 {- $running
 
