@@ -17,7 +17,11 @@ import Graphics.Gloss.Data.Point.Arithmetic as GArithmetic
 import Graphics.Gloss.Data.Vector as GVector
 import Graphics.Gloss.Geometry.Angle as GAngle
 
-lerp :: Float -> Point -> Point -> Point
+-- | What it says on the tin. A lerp function. 
+lerp :: Float -- Coefficient between 0 and 1.
+     -> Point -- Point /a/.
+     -> Point -- Point /b/.
+     -> Point -- new point some percentage value between /a/ and /b/.
 lerp !l !a !b =  ((1 P.- l) `mulSV` a) + (l `mulSV` b)
 
 -- | Return a valid heading value between (0, 360].

@@ -5,7 +5,7 @@ import Control.Monad (replicateM_)
 import Graphics.WorldTurtle
 
 main :: IO ()
-main = runTurtle $ do
+main = runWorld $ do
   -- Generate our turtles
   t1 <- makeT 0  black
   t2 <- makeT 90 blue
@@ -17,11 +17,9 @@ main = runTurtle $ do
 
   where makeT r c = do -- Helper function for generating turtles.
           t <- makeTurtle' (0, 0) r c
-          setSpeed 300 t
+          run t $ setSpeed 300
           return t
 
 -- Tells the turtle to make a loop then turn 5 degrees to the left!
-loop :: Turtle -> TurtleCommand() 
-loop t = do 
-  circle 90 360 t
-  left 5 t
+loop :: Turtle -> WorldCommand() 
+loop t = t >/> (circle 90 >> left 5)

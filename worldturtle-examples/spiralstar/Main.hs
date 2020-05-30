@@ -13,9 +13,8 @@ steps :: [(Float, Color)]
 steps = zip [0..20] colors
 
 main :: IO ()
-main = runTurtle $ do
-  t <- makeTurtle
+main = runTurtle $ 
   forM_ steps $ \ (i, c) -> do
-    setPenColor c t
-    forward (i * 10) t
-    right 144 t
+    setPenColor c
+    forward (i * 10)
+    right 144

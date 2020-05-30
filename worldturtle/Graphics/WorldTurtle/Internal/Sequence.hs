@@ -20,7 +20,6 @@ module Graphics.WorldTurtle.Internal.Sequence
   , combineSequence
   , alternateSequence
   , failSequence
-  , branch
   ) where
 
 import Graphics.WorldTurtle.Internal.Turtle
@@ -209,21 +208,6 @@ alternateSequence a b = do
   if isJust aVal 
     then let (Just !aVal') = aVal in return $! aVal'
     else let (Just !bVal') = bVal in return $! bVal'
-
-branch :: SequenceCommand c a -> SequenceCommand c a
-branch p = do
-  -- Turtles before branch
-  ts <- use turtles
-  
-  output <- p
-  
-  -- Turtles after branch
-  ts' <- use turtles
-
-  -- Combine maps, preferring ts to reset back to state.
-  turtles .= Map.union ts ts'
-  
-  return output
 
 -- | Given two sequences /a/ and /b/, instead of running them both as separate 
 --   animations, run them both in parallel!

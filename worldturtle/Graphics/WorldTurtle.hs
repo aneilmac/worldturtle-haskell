@@ -17,10 +17,14 @@ Github!
 -}
 module Graphics.WorldTurtle
      ( 
-     -- * Running the turtle
+     -- * Running the world
      -- $running
-       TurtleCommand 
-     , runTurtle 
+       WorldCommand
+     , runWorld
+     , runTurtle
+     , TurtleCommand 
+     , run 
+     , (>/>)
      -- * Parallel animation
      -- $parallel
      , (<|>)
@@ -40,23 +44,70 @@ import qualified Graphics.Gloss.Interface.Pure.Game as G
 import Graphics.WorldTurtle.Color
 import Graphics.WorldTurtle.Commands
 import Graphics.WorldTurtle.Internal.Sequence (renderTurtle)
-import Graphics.WorldTurtle.Internal.Commands (TurtleCommand, seqT)
+import Graphics.WorldTurtle.Internal.Commands (TurtleCommand, seqT
+                                              , WorldCommand (..), seqW)
 import Graphics.WorldTurtle.Shapes
+
+-- | `run` takes a `Turtle`, and a `TurtleCommand`. The command is applied
+--   to the turtle, and the result of the computation is returned as a 
+--   `WorldCommand`!
+--
+--  For example, to get a turtle's @(x, y)@ `position` one might write:
+--
+--  @
+--    myCommand :: WorldCommand ()
+--    myCommand = do
+--      t <- makeTurtle
+--      (x, y) <- run t position
+--  @
+--
+-- Or to draw a right angle:
+--
+--  @
+--    myCommand :: WorldCommand ()
+--    myCommand = do
+--      t <- makeTurtle
+--      run t $ forward 10 >> right 90 >> forward 10
+--  @
+--
+run :: Turtle 
+    -> TurtleCommand a 
+    -> WorldCommand a
+run t commands = WorldCommand $ seqT commands t
+
+-- | Infix version of `run`.
+--   This is a convenience function.
+-- 
+--   To draw a right angle:
+--
+--  @
+--    myCommand :: WorldCommand ()
+--    myCommand = do
+--      t <- makeTurtle
+--      t >/> do 
+--        forward 10
+--        right 90
+--        forward 10
+--  @
+--
+(>/>) :: Turtle -> TurtleCommand a -> WorldCommand a
+(>/>) = run
+infixl 1 >/>
 
 data World = World { elapsedTime :: !Float
                    , running :: !Bool
                    , state :: !G.ViewState 
                    }
 
-{- | `runTurtle` takes a `TurtleCommand` and produces the animation in a new
+{- | `runWorld` takes a `WorldCommand` and produces the animation in a new
      window! 
 
-     The simplest way to run `runTurtle` is to execute it directly from 
+     The simplest way to run `runWorld` is to execute it directly from 
      your main function like so:
 
      @
          main :: IO ()
-         main = runTurtle yourOwnCoolCommand
+         main = runWorld yourOwnCoolCommand
      @
 
      While running, you can interact with the window in the following way:
@@ -77,13 +128,13 @@ data World = World { elapsedTime :: !Float
      | Quit                                     | Escape key        |
      +------------------------------------------+-------------------+
 -}
-runTurtle :: TurtleCommand () -- ^ Command sequence to execute
+runWorld :: WorldCommand () -- ^ Command sequence to execute
           -> IO ()
-runTurtle tc = G.play display white 30 defaultWorld iterateRender input timePass
+runWorld tc = G.play display white 30 defaultWorld iterateRender input timePass
   where display = InWindow "World Turtle" (800, 600) (400, 300)
         iterateRender w = G.applyViewPortToPicture 
                                (G.viewStateViewPort $ state w)
-                        $! renderTurtle (seqT tc) (elapsedTime w)
+                        $! renderTurtle (seqW tc) (elapsedTime w)
         input e w 
              -- Reset key resets sim state (including unpausing). We 
              -- deliberately keep view state the same.
@@ -117,35 +168,56 @@ isPauseKey_ (G.EventKey (G.Char 'p') G.Down _ _)  = True
 isPauseKey_ (G.EventKey (G.Char 'P') G.Down _ _)  = True
 isPauseKey_ _ = False
 
+-- | This is a convenient simplification of `runWorld` where we implicitly
+--   create a single turtle and execute this.
+runTurtle :: TurtleCommand () -> IO ()
+runTurtle c = runWorld $ makeTurtle >>= \ t -> run t c
+
 {- $running
 
 It is easy to create and animate your turtle. You just pass your commands to
-`runTurtle` like so:
+`runWorld` like so:
+
+@
+     import Control.Monad (replicateM_)
+     import Graphics.WorldTurtle
+
+     myCommand :: WorldCommand ()
+     myCommand = do 
+       t <- makeTurtle
+       run t $ replicateM_ 4 (forward 90 t >> right 90 t)
+
+     main :: IO ()
+     main = runWorld myCommand
+@
+
+Which will produce this animation
+
+![basic_turtle_square gif](docs/images/basic_turtle_square.gif)
+
+If you only need to animate a single turtle, you can use `runTurtle` instead
+for convenience. This is equivalent:
 
 @
      import Control.Monad (replicateM_)
      import Graphics.WorldTurtle
 
      myCommand :: TurtleCommand ()
-     myCommand = do 
-       t <- makeTurtle
-       replicateM_ 4 $ forward 90 t >> right 90 t
+     myCommand = replicateM_ 4 $ do
+          forward 90 t
+          right 90 t
 
      main :: IO ()
      main = runTurtle myCommand
 @
 
-Which will produce this animation
-
-![basic_turtle_square gif](docs/images/basic_turtle_square.gif)
 -}
-
 
 {- $parallel
 
-   We already know that `TurtleCommand`s can be combined with `(>>)`, but the
+   We already know that `WorldCommand`s can be combined with `(>>)`, but the
    alternative operation `(<|>)` can alo be used to combine two 
-   `TurtleCommand`s. This has a special meaning: do both animations at the 
+   `WorldCommand`s. This has a special meaning: do both animations at the 
    same time!
 
    ![parallel and serial gif](docs/images/parallel_serial_turtles.gif)

@@ -15,12 +15,18 @@ manipulate a turtle.
 -}
 module Graphics.WorldTurtle.Commands
   (
-  -- * Creating a turtle.
+  -- * Types
     Turtle
+  , P.Point
+  -- * WorldCommand commands.
+  -- ** Creating a turtle.
   , makeTurtle
   , makeTurtle'
-  -- * Movement commands.
-  , P.Point
+  -- ** Canvas commands.
+  , clear
+  , sleep
+  -- * TurtleCommand commands.
+  -- ** Movement commands.
   , forward
   , fd
   , backward
@@ -30,6 +36,7 @@ module Graphics.WorldTurtle.Commands
   , right
   , rt
   , Graphics.WorldTurtle.Commands.circle
+  , Graphics.WorldTurtle.Commands.arc
   , goto
   , setPosition
   , home
@@ -39,7 +46,7 @@ module Graphics.WorldTurtle.Commands
   -- * Styling commands.
   , stamp
   , representation
-  -- * Query turtle's state.
+  -- ** Query turtle's state.
   , position
   , heading
   , speed
@@ -48,16 +55,13 @@ module Graphics.WorldTurtle.Commands
   , penDown
   , penSize
   , visible
-  -- * Set rendering state.
+  -- ** Mutate turtle's state.
+  , branch
   , setPenColor
   , setPenDown
   , setPenSize
   , setRepresentation
   , setVisible
-  -- * Canvas commands.
-  , clear
-  , sleep
-  , Graphics.WorldTurtle.Commands.branch
   -- * Common constants
   , east
   , north
@@ -88,26 +92,26 @@ manipulated! For example, to create a turtle and then move the turtle forward:
 
    @
     main:: IO ()
-    main = runTurtle $ do
+    main = runWorld $ do
       t <- makeTurtle
-      forward 90 t
+      t >/> forward 90
    @
 
 The default turtle starts at position (0, 0) and is orientated `north`.
 
 -}
-makeTurtle :: TurtleCommand Turtle
-makeTurtle = TurtleCommand generateTurtle
+makeTurtle :: WorldCommand Turtle
+makeTurtle = WorldCommand generateTurtle
 
 {-| This variant of `makeTurtle` takes a starting position, a starting 
     orientation, and a color to apply to the turtle and the turtle's pen.
 
     @
-      myCommand :: TurtleCommand ()
+      myCommand :: WorldCommand ()
       myCommand = do
         t1 <- makeTurtle' (0, 0)  0 green
         t2 <- makeTurtle' (0, 0) 90 red
-        forward 90 t1 \<|\> forward 90 t2
+        (t1 >/> forward 90) \<|\> (t2 >/> forward 90)
     @
 
     See `makeTurtle`.
@@ -115,8 +119,8 @@ makeTurtle = TurtleCommand generateTurtle
 makeTurtle' :: Point -- ^ Initial position of the turtle.
             -> Float -- ^ Initial heading of the turtle.
             -> Color -- ^ Color of the turtle and the turtle's pen.
-            -> TurtleCommand Turtle -- ^ The generated turtle.
-makeTurtle' p f c = TurtleCommand $ do 
+            -> WorldCommand Turtle -- ^ The generated turtle.
+makeTurtle' p f c = WorldCommand $ do 
   turtle <- generateTurtle
   let ts = turtLens_ turtle
   ts . T.position       .= p
@@ -128,12 +132,11 @@ makeTurtle' p f c = TurtleCommand $ do
 -- | Move the turtle backward by the specified @distance@, in the direction the 
 --   turtle is headed.
 backward :: Float -- ^ Distance to move the turtle.
-         -> Turtle -- ^ The turtle to move.
          -> TurtleCommand ()
 backward !d = forward (-d)
 
 -- | Shorthand for `backward`.
-bk :: Float -> Turtle -> TurtleCommand ()
+bk :: Float -> TurtleCommand ()
 bk = backward
 
 calculateNewPointF_ :: P.Point -- ^ Starting point
@@ -148,9 +151,8 @@ calculateNewPointF_ !p !d !h !q = P.lerp q p endP
 -- | Move the turtle forward by the specified @distance@, in the direction the 
 --   turtle is headed.
 forward :: Float -- ^ Distance to move the turtle.
-        -> Turtle -- ^ The turtle to move.
         -> TurtleCommand ()
-forward !d turtle = TurtleCommand $ do
+forward !d = TurtleCommand $ \ turtle -> do
     t <- tData_ turtle
     --  Get origin point
     animate' d (t ^. T.speed) $ \ q -> do
@@ -165,40 +167,36 @@ forward !d turtle = TurtleCommand $ do
       --  Update the turtle to a new position
 
 -- | Shorthand for `forward`.
-fd :: Float -> Turtle -> TurtleCommand ()
+fd :: Float -> TurtleCommand ()
 fd = forward
 
 -- | Stamp a copy of the turtle shape onto the canvas at the current turtle 
 --   position.
-stamp :: Turtle -- ^ The turtle with the shape to be copied.
-      -> TurtleCommand ()
-stamp turtle = TurtleCommand $ tData_ turtle >>= addPicture . T.drawTurtle 
+stamp :: TurtleCommand ()
+stamp = TurtleCommand $ \ turtle -> tData_ turtle >>= addPicture . T.drawTurtle 
 
 -- | Turn a turtle right by the given degrees amount.
 right :: Float -- ^ Rotation amount to apply to turtle.
-      -> Turtle -- ^ The turtle to rotate.
       -> TurtleCommand ()
 right = rotateTo_ True
 
 -- | Shorthand for `right`.
-rt :: Float -> Turtle -> TurtleCommand ()
+rt :: Float -> TurtleCommand ()
 rt = right
 
 -- | Turn a turtle left by the given degrees amount.
 left :: Float -- ^ Rotation amount to apply to turtle.
-     -> Turtle -- ^ The turtle to rotate.
      -> TurtleCommand ()
 left = rotateTo_ False
 
 -- | Shorthand for `left`.
-lt :: Float -> Turtle -> TurtleCommand ()
+lt :: Float -> TurtleCommand ()
 lt = left
 
 rotateTo_ :: Bool -- ^ Bias decides in which direction rotation happens.
           -> Float -- ^ Amount to rotate by
-          -> Turtle -- Turtle to modify.
           -> TurtleCommand ()
-rotateTo_  rightBias !r turtle = TurtleCommand $ do
+rotateTo_  rightBias !r = TurtleCommand $ \ turtle -> do
     t <- tData_ turtle
     let r' = P.normalizeHeading r
     animate' (P.degToRad r') (t ^. T.rotationSpeed) $ \q -> do
@@ -207,6 +205,18 @@ rotateTo_  rightBias !r turtle = TurtleCommand $ do
                                                           else h + q * r'
       --  Get new heading via percentage
       turtLens_ turtle . T.heading .= newHeading
+
+-- | Draw a circle with a given @radius@. The center is @radius@ units left of 
+--   the @turtle@ if positive. Otherwise  @radius@ units right of the @turtle@ 
+--   if negative.
+--
+--   The circle is drawn in an anticlockwise direction if the radius is 
+--   positive, otherwise, it is drawn in a clockwise direction.
+--
+--   Circle is an alias for @circle r = arc r 360@.
+circle :: Float -- ^ Radius of the circle.
+       -> TurtleCommand ()
+circle radius = Graphics.WorldTurtle.Commands.arc radius 360
 
 -- | Draws an arc starting from a given starting point on the edge of the
 --   circle.
@@ -243,13 +253,12 @@ calculateNewPointC_ !p !radius !startAngle !angle = (px, py)
 --
 --   The arc is drawn in an anticlockwise direction if the radius is positive,
 --   otherwise, it is drawn in a clockwise direction.
-circle  :: Float -- ^ Radius of the circle.
-        -> Float -- ^ Angle to travel in degrees. 
+arc  :: Float -- ^ Radius of the circle.
+     -> Float -- ^ Angle to travel in degrees. 
                  -- For example: @360@ for a full circle or @180@ for a 
                  -- semicircle.
-        -> Turtle -- ^ Turtle to move in a circle.
-        -> TurtleCommand ()
-circle !radius !r turtle = TurtleCommand $ do
+     -> TurtleCommand ()
+arc !radius !r = TurtleCommand $ \turtle -> do
   t <- tData_ turtle
   let !r' = P.normalizeHeading r
   animate' (abs radius * P.degToRad r') (t ^. T.speed) $ \ q -> do
@@ -272,15 +281,13 @@ circle !radius !r turtle = TurtleCommand $ do
 
 -- | Returns the turtle's current position.
 --   Default (starting) position is @(0, 0)@.
-position :: Turtle -- ^ Turtle to query.
-         -> TurtleCommand P.Point -- ^ Returned current point.
+position :: TurtleCommand P.Point -- ^ Returned current point.
 position = getter_ (0, 0) T.position
 
 -- | Warps the turtle to its starting position @(0, 0)@ and resets the
--- orientation to @North@ (90 degrees). No line is drawn moving the turtle.
-home :: Turtle
-     -> TurtleCommand ()
-home turtle = TurtleCommand $ do
+--   orientation to @North@ (90 degrees). No line is drawn moving the turtle.
+home :: TurtleCommand ()
+home = TurtleCommand $ \ turtle -> do
   let ts = turtLens_ turtle
   ts . T.position       .= (0, 0)
   ts . T.heading        .= 90
@@ -291,9 +298,8 @@ home turtle = TurtleCommand $ do
 --   
 --   This does not affect the turtle's heading.
 goto :: P.Point -- ^ Position to warp to.
-     -> Turtle -- ^ Turtle to modify.
      -> TurtleCommand ()
-goto point turtle = TurtleCommand $ do
+goto point = TurtleCommand $ \ turtle -> do
   t <- tData_ turtle
   let startP = t ^. T.position
   when (t ^. T.penDown) $ addPicture 
@@ -302,7 +308,7 @@ goto point turtle = TurtleCommand $ do
   turtLens_ turtle . T.position .= point
 
 -- | Alias of `goto`.
-setPosition :: P.Point -> Turtle -> TurtleCommand ()
+setPosition :: P.Point -> TurtleCommand ()
 setPosition = goto
 
 -- | Returns the turtle's heading.
@@ -315,104 +321,89 @@ setPosition = goto
 --   * South is @270@ degrees.
 --
 --   The default heading is North (@90@ degrees).
-heading :: Turtle -- ^ Turtle to query.
-         -> TurtleCommand Float -- ^ Returned heading as angle in degrees.
+heading :: TurtleCommand Float -- ^ Returned heading as angle in degrees.
 heading = getter_ 0 T.heading
 
 -- | Sets the turtle's heading. See `heading`.
 setHeading :: Float -- ^ Heading to apply. 
-           -> Turtle -- ^ Turtle to modify.
            -> TurtleCommand ()
 setHeading = setter_ T.heading
 
 -- | Returns the turtle's pen color.
 --   The color of the turtle's pen.The default color is @black@.
-penColor :: Turtle -- ^ Turtle to query.
-         -> TurtleCommand Color -- ^ Returned current pen color.
+penColor :: TurtleCommand Color -- ^ Returned current pen color.
 penColor = getter_ black T.penColor
 
 -- | Set the turtle's pen color.
 --  See `penColor`.
 setPenColor :: Color -- ^ New pen color to apply
-            -> Turtle -- ^ Turtle to modify.
             -> TurtleCommand ()
 setPenColor = setter_ T.penColor
 
 -- | Returns whether the turtle's pen is down.
 --   When the turtle's pen is down it will draw a line when it moves.
 --   The default value is @True@.
-penDown :: Turtle -- ^ Turtle to query.
-         -> TurtleCommand Bool -- ^ True if pen is down, false if not.
+penDown :: TurtleCommand Bool -- ^ True if pen is down, false if not.
 penDown = getter_ False T.penDown
 
 -- | Sets the turtle's pen to down or up.
 --   See `penDown`.
 setPenDown :: Bool -- ^ New state for pen flag. True for down. False for up.
-           -> Turtle -- ^ Turtle to modify.
            -> TurtleCommand ()
 setPenDown = setter_ T.penDown
 
 -- | Returns the turtle's pen size.
 --   Defaults to @2@.
-penSize :: Turtle -- ^ Turtle to query.
-         -> TurtleCommand Float -- ^ Size of turtle's pen.
+penSize :: TurtleCommand Float -- ^ Size of turtle's pen.
 penSize = getter_ 0 T.penSize
 
 -- | Sets the turtle's pen size.
 --   See `penSize`.
 setPenSize :: Float -- ^ New size for turtle's pen.
-           -> Turtle -- ^ Turtle to modify.
            -> TurtleCommand ()
 setPenSize = setter_ T.penSize
 
 -- | Returns whether the turtle is visible.
 --   The default value is @True@.
-visible :: Turtle -- ^ Turtle to query.
-        -> TurtleCommand Bool -- ^ @True@ if turtle is visible, @False@ if not.
+visible :: TurtleCommand Bool -- ^ @True@ if turtle is visible, @False@ if not.
 visible = getter_ False T.visible
 
 -- | Sets the turtle's visibility.
 --   See `visible`.
 setVisible :: Bool -- ^ New state for visible flag.
-           -> Turtle -- ^ Turtle to modify.
            -> TurtleCommand ()
 setVisible = setter_ T.visible
 
 -- | Returns the turtle's current speed.
 --   Speed is is @distance@ per second.
---   A speed of 0 is equivalent to no animation being performed and instant 
+--   A speed of @0 is equivalent to no animation being performed and instant 
 --   movement.
 -- The default value is @200@.
-speed :: Turtle -- ^ Turtle to query.
-      -> TurtleCommand Float -- ^ Speed of turtle.
+speed :: TurtleCommand Float -- ^ Speed of turtle.
 speed = getter_ 0 T.speed
 
 -- | Sets the turtle's speed.
 --   See `speed`.
 setSpeed :: Float -- ^ New speed.
-         -> Turtle -- ^ Turtle to modify.
          -> TurtleCommand ()
 setSpeed = setter_ T.speed
 
 -- | Returns the turtle's current rotation speed.
 --   Rotation speed is is the speed in seconds it takes to do a full revolution.
---   A speed of 0 is equivalent to no animation being performed and instant 
+--   A speed of @0@ is equivalent to no animation being performed and instant 
 --   rotation.
 -- The default value is @20@.
-rotationSpeed :: Turtle -- ^ Turtle to query.
-              -> TurtleCommand Float -- ^ Rotation speed of turtle.
+rotationSpeed :: TurtleCommand Float -- ^ Rotation speed of turtle.
 rotationSpeed = getter_ 0 T.rotationSpeed
 
 -- | Sets the turtle's rotation speed.
 --   See `rotationSpeed`.
 setRotationSpeed :: Float -- ^ New rotation speed.
-                 -> Turtle -- ^ Turtle to modify.
                  -> TurtleCommand ()
 setRotationSpeed = setter_ T.rotationSpeed
 
 -- | Gets the turtle's representation as a `Picture`.
-representation :: Turtle -- ^ Turtle to query.
-               -> TurtleCommand Picture
+representation :: TurtleCommand Picture
 representation = getter_ blank T.representation
 
 {- | Sets the turtle's representation to a `Picture`.
@@ -425,31 +416,32 @@ representation = getter_ blank T.representation
 
     myCommand :: TurtleCommand ()
     myCommand = do
-      t <- makeTurtle
-      setPenColor red t
-      setRepresentation (G.color red $ G.circleSolid 10) t
-      forward 90 t
+      setPenColor red
+      setRepresentation (G.color red $ G.circleSolid 10)
+      forward 90
    @
 -}
 setRepresentation :: Picture -- ^ Picture to apply.
-                  -> Turtle -- ^ Turtle to modify.
                   -> TurtleCommand ()
 setRepresentation = setter_ T.representation
 
 -- | Clears all drawings form the canvas. Does not alter any turtle's state.
-clear :: TurtleCommand ()
-clear = TurtleCommand $ pics .= []
+clear :: WorldCommand ()
+clear = WorldCommand $ pics .= []
 
 -- | Sleep for a given amount of time in seconds. When sleeping no animation 
 --   runs. A negative value will be clamped to @0@.
-sleep :: Float -> TurtleCommand ()
-sleep = TurtleCommand . decrementSimTime . max 0
+sleep :: Float -> WorldCommand ()
+sleep = WorldCommand . decrementSimTime . max 0
 
--- | Given a command, runs the command, then resets the turtle(s) state back to
---   what the state was before the command was run. 
+-- | Given a command, runs the command, then resets the turtle's state back to
+--   what the state was before the command was run.
 branch :: TurtleCommand a -> TurtleCommand a
-branch (TurtleCommand p ) = TurtleCommand $ 
-  Graphics.WorldTurtle.Internal.Sequence.branch p
+branch (TurtleCommand p ) = TurtleCommand $ \ turtle -> do
+  t <- tData_ turtle
+  output <- p turtle
+  turtLens_ turtle .= t
+  return output
 
 -- | @90@ degrees.
 north :: Float
@@ -483,19 +475,19 @@ turtLens_ t = turtles . at t . _Just
 
 -- | This is a helper function for our getter commands.
 --   It takes a default value, the lense to compose, and the turtle to inspect.
-getter_ :: a -> Lens' T.TurtleData a -> Turtle -> TurtleCommand a
-getter_ def l t = 
-  TurtleCommand $ fromMaybe def <$> preuse (turtLens_ t . l)
+getter_ :: a -> Lens' T.TurtleData a -> TurtleCommand a
+getter_ def l = 
+  TurtleCommand $ \ t -> fromMaybe def <$> preuse (turtLens_ t . l)
 {-# INLINE getter_ #-}
 
 -- | This is a helper function that extracts the turtle data for a given turtle.
 tData_ :: Turtle -> SeqC T.TurtleData
-tData_ = seqT <$> getter_ T.defaultTurtle id
+tData_ = seqT $ getter_ T.defaultTurtle id
 {-# INLINE tData_ #-}
 
 -- | This is a helper function for our setter commands
 -- It takes a lens, the value to apply, and the turtle to modify.
-setter_ :: Lens' T.TurtleData b -> b -> Turtle -> TurtleCommand ()
-setter_ l val t = 
-  TurtleCommand $ turtLens_ t . l .= val
+setter_ :: Lens' T.TurtleData b -> b -> TurtleCommand ()
+setter_ l val = 
+  TurtleCommand $ \ t -> turtLens_ t . l .= val
 {-# INLINE setter_ #-}

@@ -5,35 +5,34 @@ module Main where
 import Graphics.Gloss.Geometry.Angle (degToRad)
 import Graphics.WorldTurtle
 
-hilbert :: Int -> Float -> Float -> Turtle -> TurtleCommand ()
-hilbert 0 _ _ _ = pure ()
-hilbert level angle lengthStep t = do
-  penColor t >>= \c -> 
-    setPenColor (shiftHue (degToRad 0.1) c) t
-  
-  left angle t
-  hilbert' (-angle) t
+hilbert :: Int -> Float -> Float -> TurtleCommand ()
+hilbert 0 _ _ = pure ()
+hilbert level angle lengthStep = do
+  penColor >>= \c -> setPenColor $ shiftHue (degToRad 0.1) c
 
-  forward lengthStep t
-  left (-angle)  t
-  hilbert' angle t
+  left angle
+  hilbert' (-angle)
 
-  forward lengthStep t
-  hilbert' angle t
+  forward lengthStep
+  left (-angle)
+  hilbert' angle
 
-  left (-angle) t
-  forward lengthStep t
-  hilbert' (-angle) t
+  forward lengthStep
+  hilbert' angle
 
-  left angle t
+  left (-angle)
+  forward lengthStep
+  hilbert' (-angle)
+
+  left angle
   
   where hilbert' a = hilbert (level - 1) a lengthStep
  
 main :: IO ()
-main = runTurtle $ do
+main = runWorld $ do
   t <- makeTurtle' (-200, -200) east red 
-  setSpeed 2000 t
-  setRotationSpeed 0 t
-  setVisible False t
-  hilbert 6 90 6 t
-
+  t >/> do
+    setSpeed 2000
+    setRotationSpeed 0
+    setVisible False
+    hilbert 6 90 6
