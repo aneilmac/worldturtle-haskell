@@ -6,7 +6,7 @@ import Graphics.Gloss.Data.Vector (magV) -- Grab the magnitude function.
 import Graphics.WorldTurtle
 
 main :: IO ()
-main = runWorld $ makeTurtle' (0, 0) north red >>= flip run (forever drawStar)
+main = runWorld $ makeTurtle' (0, 0) north red >>= \ t -> t >/> forever drawStar
 
 drawStar :: TurtleCommand ()
 drawStar = do

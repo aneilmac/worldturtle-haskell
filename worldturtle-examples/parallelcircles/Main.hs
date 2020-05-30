@@ -13,7 +13,7 @@ main = runWorld $ do
   t4 <- makeT 270 green
 
   -- Run this animation on our turtles
-  replicateM_ 18 $  loop t1 <|> loop t2 <|> loop t3 <|> loop t4
+  replicateM_ 18 $ loop t1 <|> loop t2 <|> loop t3 <|> loop t4
 
   where makeT r c = do -- Helper function for generating turtles.
           t <- makeTurtle' (0, 0) r c
