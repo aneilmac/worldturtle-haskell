@@ -17,7 +17,7 @@ main = runWorld $ do
 
   where makeT r c = do -- Helper function for generating turtles.
           t <- makeTurtle' (0, 0) r c
-          run t $ setSpeed 300
+          t >/> setSpeed 300
           return t
 
 -- Tells the turtle to make a loop then turn 5 degrees to the left!
