@@ -56,7 +56,8 @@ type SeqC a = SequenceCommand (AlmostVal ()) a
 
           * Turn right by @90@ degrees
 
-    To execute, use the `Graphics.WorldTurtle.(>/>)` function like so:
+    Execute `drawSquare` on a turtle using `Graphics.WorldTurtle.(>/>)` function
+    like so:
 
     @
       main = runWorld $ do
@@ -100,7 +101,7 @@ instance MonadFail TurtleCommand where
     It could be as simple as "make a turtle" or more complicated like 
     "run these 5 turtles in parallel."
 
-    `TurtleCommand`s can be executed in order by combining them using
+    `WorldCommand`s can be executed in order by combining them using
     the monadic operator `(>>)`.
 -}
 newtype WorldCommand a = WorldCommand 

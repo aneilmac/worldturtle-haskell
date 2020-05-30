@@ -175,7 +175,7 @@ runTurtle c = runWorld $ makeTurtle >>= \ t -> run t c
 
 {- $running
 
-It is easy to create and animate your turtle. You just pass your commands to
+It is easy to create and animate a turtle. You just pass your commands to
 `runWorld` like so:
 
 @
@@ -185,7 +185,7 @@ It is easy to create and animate your turtle. You just pass your commands to
      myCommand :: WorldCommand ()
      myCommand = do 
        t <- makeTurtle
-       run t $ replicateM_ 4 (forward 90 t >> right 90 t)
+       t >/> replicateM_ 4 (forward 90 t >> right 90 t)
 
      main :: IO ()
      main = runWorld myCommand
