@@ -1,4 +1,6 @@
-# WorldTurtle: Turtle Animations in Haskell
+# WorldTurtle [![Hackage][Hackage badge]][Hackage page]
+
+## Turtle Animations in Haskell
 
 ![parallel cirlces animation](worldturtle/docs/images/parallel_circles_animated.gif)
 
@@ -144,3 +146,6 @@ executed from stack. To run `parallelcircles` try:
 ```sh
 stack exec parallelcircles-exe
 ```
+
+[Hackage page]: https://hackage.haskell.org/package/worldturtle
+[Hackage badge]: https://img.shields.io/hackage/v/worldturtle
