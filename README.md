@@ -1,6 +1,8 @@
 # WorldTurtle: Turtle Animations in Haskell
 
+<p align="center">
 <img src="worldturtle/docs/images/parallel_circles_animated.gif" width="400" />
+</p>
 
 [WorldTurtle](https://hackage.haskell.org/package/worldturtle) is a Haskell take
 on [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics).
@@ -29,7 +31,9 @@ main = runTurtle $
 
 Like so!
  
+<p align="center">
 <img src="worldturtle/docs/images/basic_turtle_square.gif" width="400" />
+</p>
  
 ### Parallel animations
 
@@ -57,7 +61,9 @@ main = runWorld $ do
 
 We get this animation:
 
+<p align="center">
 <img src="worldturtle/docs/images/parallel_serial_turtles_2.gif" width="400"/>
+</p>
 
 ### Interactive Controls
 
@@ -80,17 +86,21 @@ Here's some of my favorites:
 
 ### [spiralstar](worldturtle-examples/spiralstar/Main.hs) 
 
+<p align="center">
 <img src="worldturtle-examples/spiralstar/output.gif" width="400" />
-
+</p>
 
 ### [spiralsquare](worldturtle-examples/spiralsquare/Main.hs) 
 
+<p align="center">
 <img src="worldturtle-examples/spiralsquare/output.gif" width="400"/> 
-
+</p>
 
 ### [lsystem](worldturtle-examples/lsystem/Main.hs) 
 
+<p align="center">
 <img src="worldturtle-examples/lsystem/output.gif" width="400"/>
+</p>
 
 ## Building a project
 
