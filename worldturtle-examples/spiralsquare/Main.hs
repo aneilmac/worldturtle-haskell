@@ -22,4 +22,3 @@ spiral = do
 
 main :: IO ()
 main = runTurtle spiral
-

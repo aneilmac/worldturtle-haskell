@@ -16,4 +16,3 @@ main = runWorld $ do
   -- Demonstrate parallel
   sleep 1
   t1 >/> circle 90 <|> t2 >/> circle (-90)
-  

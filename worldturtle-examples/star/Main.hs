@@ -15,4 +15,4 @@ drawStar = run $ do
   forward 200
   left 170
   -- If the magnitude of the position is <= 1 then return True.
-  (1 <= ) . magV <$> position 
+  (1 <= ) . magV <$> position
