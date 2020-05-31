@@ -10,7 +10,7 @@ import Graphics.WorldTurtle.Internal.Sequence
 
 import System.Environment (getArgs)
 
-parallelCircles :: TurtleCommand ()
+parallelCircles :: WorldCommand ()
 parallelCircles =  do
   -- Generate our turtles
   t1 <- makeT 0  black
@@ -19,15 +19,15 @@ parallelCircles =  do
   t4 <- makeT 270 green
 
   -- Run this animation on our turtles
-  replicateM_ 18 $  loop t1 <|> loop t2 <|> loop t3 <|> loop t4
+  replicateM_ 18 $ loop t1 <|> loop t2 <|> loop t3 <|> loop t4
 
   where makeT r c = do -- Helper function for generating turtles.
           t <- makeTurtle' (0, 0) r c
-          setSpeed 300 t
+          t >/> setSpeed 300
           return t
-        loop t = circle 90 360 t >> left 5 t
+        loop = run $ circle 90 >> left 5
 
 main :: IO ()
 main = do
   [t] <- getArgs
-  G.display G.FullScreen white $ renderTurtle (seqT parallelCircles) (read t)
+  G.display G.FullScreen white $ renderTurtle (seqW parallelCircles) (read t)

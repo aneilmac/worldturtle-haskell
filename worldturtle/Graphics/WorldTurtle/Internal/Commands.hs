@@ -2,6 +2,7 @@
 module Graphics.WorldTurtle.Internal.Commands
   ( SeqC
   , TurtleCommand (..)
+  , WorldCommand (..)
   ) where
 
 import Control.Applicative
@@ -13,74 +14,91 @@ import Graphics.WorldTurtle.Internal.Sequence
 
 type SeqC a = SequenceCommand (AlmostVal ()) a
 
-{-| A `TurtleCommand` represents an instruction to execute. It could be as
-    simple as "draw a line" or more complicated like "draw 300 circles."
-    
+{-| A `TurtleCommand` represents an instruction to execute on a turtle.
+    It could be as simple as "draw a line" or more complicated like 
+    "draw 300 circles."
+
     `TurtleCommand`s can be executed in order by combining them using
     the monadic operator `(>>)`.
 
-    Here is an example of how to write a function that when given a
-    @size@ and a @turtle@, will return a new `TurtleCommand` which
-    will draw a square with a length and breadth of @size@ using @turtle@.
+    For example, to draw an equilateral triangle 
+    using [do notation](https://en.wikibooks.org/wiki/Haskell/do_notation):
 
-   @
-      drawSquare :: Float -> Turtle -> TurtleCommand ()
-      drawSquare size t = replicateM_ 4 $ forward size t >> right 90 t
-   @
+    > drawTriangle :: TurtleCommand ()
+    > drawTriangle = do
+    >   setHeading east
+    >   forward 100
+    >   left 120
+    >   forward 100
+    >   left 120
+    >   forward 100
 
-   This draws a square by doing the following in order:
-   
-   [@(1/4)@]: 
+    Which would produce:
 
-          * Move forward by @size@ amount. 
-
-          * Turn right by @90@ degrees
-
-     [@(2/4)@]:
-
-          * Move forward by @size@ amount. 
-
-          * Turn right by @90@ degrees
-
-     [@(3/4)@]:
-
-          * Move forward by @size@ amount. 
-
-          * Turn right by @90@ degrees
-
-     [@(4/4)@]:
-
-          * Move forward by @size@ amount. 
-
-          * Turn right by @90@ degrees
+    ![draw triangle gif](docs/images/drawtriangle.gif)
 -}
 newtype TurtleCommand a = TurtleCommand 
   { 
-    seqT :: SeqC a
+    seqT :: Turtle -> SeqC a
   }
 
 instance Functor TurtleCommand where
-  fmap f (TurtleCommand a) = TurtleCommand $ fmap f a
+  fmap f (TurtleCommand a) = TurtleCommand $ \ t -> fmap f (a t)
 
 instance Applicative TurtleCommand where
-  pure a = TurtleCommand $ pure a
-  liftA2 f (TurtleCommand a) (TurtleCommand b) = TurtleCommand $ liftA2 f a b
+  pure a = TurtleCommand $ \ _ -> pure a
+  liftA2 f (TurtleCommand a) (TurtleCommand b) = 
+    TurtleCommand $ \ t -> liftA2 f (a t) (b t)
 
 instance Monad TurtleCommand where
-  (TurtleCommand a) >>= f = TurtleCommand $ a >>= \s -> seqT (f s)
-
-instance Alternative TurtleCommand where
-  empty = TurtleCommand failSequence
-  (<|>) (TurtleCommand a) (TurtleCommand b) = 
-    TurtleCommand $ alternateSequence a b
-
-instance Semigroup a => Semigroup (TurtleCommand a) where
-  (TurtleCommand a) <> (TurtleCommand b) = 
-    TurtleCommand $ combineSequence a b
-    
-instance MonadPlus TurtleCommand
+  (TurtleCommand a) >>= f = TurtleCommand $ \ t -> a t >>= \s -> seqT (f s) t
 
 instance MonadFail TurtleCommand where
-  fail t = TurtleCommand $ do
+  fail t = TurtleCommand $ \ _ -> do
+    addPicture $ text t
+    failSequence
+
+{- | A `WorldCommand` represents an instruction that affects the entire 
+     animation canvas.
+    
+    This could be as simple as "make a turtle" or more complicated like 
+    "run these 5 turtles in parallel."
+
+    Like `TurtleCommand`s, `WorldCommand`s can be executed in order by 
+    combining commands in order using the monadic operator `(>>)`.
+
+    To execute a `TurtleCommand` in a `WorldCommand`, use either the 
+    `Graphics.WorldTurtle.run` function or the 
+    `Graphics.WorldTurtle.>/>` operator.
+
+    For how to achieve parallel animations
+    see "Graphics.WorldTurtle#parallel".
+-}
+newtype WorldCommand a = WorldCommand 
+  { 
+    seqW :: SeqC a
+  }
+
+instance Functor WorldCommand where
+  fmap f (WorldCommand a) = WorldCommand $ fmap f a
+
+instance Applicative WorldCommand where
+  pure a = WorldCommand $ pure a
+  liftA2 f (WorldCommand a) (WorldCommand b) = WorldCommand $ liftA2 f a b
+
+instance Monad WorldCommand where
+  (WorldCommand a) >>= f = WorldCommand $ a >>= \s -> seqW (f s)
+
+instance Alternative WorldCommand where
+  empty = WorldCommand failSequence
+  (<|>) (WorldCommand a) (WorldCommand b) = WorldCommand $ alternateSequence a b
+
+instance Semigroup a => Semigroup (WorldCommand a) where
+  (WorldCommand a) <> (WorldCommand b) = WorldCommand $ combineSequence a b
+
+instance MonadPlus WorldCommand
+
+instance MonadFail WorldCommand where
+  fail t = WorldCommand $ do
     addPicture $ text t
     failSequence

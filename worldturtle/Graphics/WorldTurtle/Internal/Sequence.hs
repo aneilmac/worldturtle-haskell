@@ -20,7 +20,6 @@ module Graphics.WorldTurtle.Internal.Sequence
   , combineSequence
   , alternateSequence
   , failSequence
-  , branch
   ) where
 
 import Graphics.WorldTurtle.Internal.Turtle
@@ -104,7 +103,7 @@ setSimTime newTime = do
 -- See `setSimTime`.
 decrementSimTime :: Float -- ^ Value to subtract from store simulation time. 
                  -> SequenceCommand b ()
-decrementSimTime duration = simTime >>= setSimTime . (flip (-) duration)
+decrementSimTime duration = simTime >>= setSimTime . flip (-) duration
 
 -- | Given a picture, adds it to the picture list.
 addPicture :: Picture -- ^ Picture to add to our animation
@@ -139,7 +138,7 @@ renderTurtle c f = let (_, s) = processTurtle c (defaultTSC f)
                     in pictures $ s ^. pics ++ drawTurtles (s ^. turtles)
 
 drawTurtles :: Map Turtle TurtleData -> [Picture]
-drawTurtles m = fmap drawTurtle $ Map.elems m 
+drawTurtles m = drawTurtle <$> Map.elems m 
 
 generateTurtle :: SequenceCommand b Turtle
 generateTurtle = do
@@ -210,21 +209,6 @@ alternateSequence a b = do
     then let (Just !aVal') = aVal in return $! aVal'
     else let (Just !bVal') = bVal in return $! bVal'
 
-branch :: SequenceCommand c a -> SequenceCommand c a
-branch p = do
-  -- Turtles before branch
-  ts <- use turtles
-  
-  output <- p
-  
-  -- Turtles after branch
-  ts' <- use turtles
-
-  -- Combine maps, preferring ts to reset back to state.
-  turtles .= Map.union ts ts'
-  
-  return output
-
 -- | Given two sequences /a/ and /b/, instead of running them both as separate 
 --   animations, run them both in parallel!
 runParallel :: SequenceCommand c a -- ^ Sequence /a/ to run.
@@ -262,7 +246,7 @@ runParallel a b = do
   -- animating is concerned is the same as not succeeding at all!
   decrementSimTime 0
 
-  return $! (aVal, bVal)
+  return (aVal, bVal)
 
 -- | Calls our early exit and fails the callback. No calculations will be
 --   performed beyond this call.

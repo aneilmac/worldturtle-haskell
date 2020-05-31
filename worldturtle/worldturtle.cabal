@@ -1,7 +1,7 @@
 cabal-version: 2.0
 
 name:           worldturtle
-version:        0.1.2.0
+version:        0.2.0.0
 synopsis:       Turtle graphics.
 category:       teaching
 homepage:       https://github.com/FortOyer/worldturtle-haskell#readme
@@ -22,7 +22,7 @@ description:
   Turtle graphics are a fantastic introduction to the world of
     programming and to the syntax of a new programming language.
   .
-  ![parallelcircles gif](https://hackage.haskell.org/package/worldturtle-0.1.1.0/docs/docs/images/parallel_circles_animated_300.gif)
+  ![parallelcircles gif](https://hackage.haskell.org/package/worldturtle-0.2.0.0/docs/docs/images/parallel_circles_animated_300.gif)
   .
   This module is a framework built on top 
   of [gloss](https://hackage.haskell.org/package/gloss) to render turtles
@@ -49,7 +49,7 @@ library
       Graphics.WorldTurtle.Internal.Turtle
       Graphics.WorldTurtle.Shapes
   build-depends:
-      base >=4.7 && <5
+      base >=4.13 && <5
     , containers >=0.6.2 && < 0.7
     , gloss >=1.13.1 && < 1.14
     , lens >=4.18.1 && < 4.20

@@ -5,8 +5,4 @@ import Control.Monad (replicateM_) -- Required control flow functions.
 import Graphics.WorldTurtle
 
 main :: IO ()
-main = runTurtle $ do
-  t <- makeTurtle
-  replicateM_ 4 $ do
-    forward 90 t
-    right 90 t
+main = runTurtle $ replicateM_ 4 $ forward 90 >> right 90

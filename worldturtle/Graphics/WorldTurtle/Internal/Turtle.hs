@@ -58,10 +58,10 @@ defaultTurtle = TurtleData
 
 drawTurtle :: TurtleData -> Picture
 drawTurtle t
-  | t ^. visible  == False = blank
+  | not (t ^. visible)     = blank
   | otherwise = let (x, y) = _position t
                     s = _scale t
                  in translate x y 
-                  $ rotate (360 - t ^. heading)
+                  $ rotate (360 - t ^. heading) -- Anticlockwise to clockwise.
                   $ G.scale s s
-                  $ (t ^. representation)
+                    (t ^. representation)

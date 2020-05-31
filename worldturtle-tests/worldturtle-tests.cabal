@@ -1,7 +1,7 @@
 cabal-version: 2.0
 
 name:           worldturtle-tests
-version:        0.1.0.0
+version:        0.2.0.0
 description:    Tests using the worldturtle library
 category:       teaching
 homepage:       https://github.com/FortOyer/worldturtle-haskell#readme
@@ -19,6 +19,20 @@ source-repository head
 executable spaceleak-exe
   main-is: Main.hs
   hs-source-dirs: spaceleak
+  build-depends:
+      base
+    , gloss
+    , worldturtle
+  default-language: Haskell2010
+  ghc-options:
+    -O2
+    -Wall
+    -threaded
+    -rtsopts
+
+executable drawtriangle-exe
+  main-is: Main.hs
+  hs-source-dirs: drawtriangle
   build-depends:
       base
     , gloss

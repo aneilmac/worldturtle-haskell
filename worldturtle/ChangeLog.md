@@ -1,5 +1,14 @@
 # Changelog for turtle-haskell
 
+## v0.2.0
+
+* Split `TurtleCommand` into `TurtleCommand` and `WorldCommand` to help reduce
+  boilerplate of having to apply a turtle to a command for every stage of a
+  command block.
+* Added `runWorld`, `runTurtle`, `run`, and `(>/>)` functions.
+* `circle` command split into `arc` and `circle` commands.
+* Fixed `shiftHue` as function did not match documentation.
+
 ## v0.1.2
 
 * Added the `branch` function.
@@ -17,5 +26,3 @@
 ## v0.1.0
 
 Initial release.
-
-## Unreleased changes

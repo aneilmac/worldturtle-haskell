@@ -4,23 +4,21 @@ module Main where
 
 import Control.Monad (forM_)
 
-import Graphics.Gloss.Geometry.Angle (degToRad)
 import Graphics.WorldTurtle
 
 forwards :: [Float]
-forwards = take 400 $ map (+1) [0, 0.75..]
+forwards = take 400 [1, 1.75..]
 
-spiral :: Turtle -> TurtleCommand ()
-spiral t = do
-  setPenColor cyan t
-  setPenSize 1.5 t
-  setSpeed 500 t
-  setRotationSpeed 0 t -- instant turns
+spiral :: TurtleCommand ()
+spiral = do
+  setPenColor cyan
+  setPenSize 1.5
+  setSpeed 500
+  setRotationSpeed 0 -- instant turns
   forM_ forwards $ \ f -> do
-    forward f t
-    left 89.5 t
-    penColor t >>= \c -> setPenColor (shiftHue (degToRad 1) c) t
+    forward f
+    left 89.5
+    penColor >>= setPenColor . shiftHue 1
 
 main :: IO ()
-main = runTurtle $ makeTurtle >>= spiral
-
+main = runTurtle spiral
