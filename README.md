@@ -76,25 +76,23 @@ You can interact with the animation window in the following ways:
 
 For all examples, look [here](worldturtle-examples)!
 
-Here's some of my favorites:
+<details>
+  
+<summary>Here's some of my favorites!</summary>
 
 ### [spiralstar](worldturtle-examples/spiralstar/Main.hs) example
 
-<p align="center">
-<img src="worldturtle-examples/spiralstar/output.gif" width="400" />
-</p>
+![sprialstar animation](worldturtle-examples/spiralstar/output.gif)
 
 ### [spiralsquare](worldturtle-examples/spiralsquare/Main.hs) example
 
-<p align="center">
-<img src="worldturtle-examples/spiralsquare/output.gif" width="400"/> 
-</p>
+![spiralsquare animation](worldturtle-examples/spiralsquare/output.gif)
 
 ### [lsystem](worldturtle-examples/lsystem/Main.hs) example
 
-<p align="center">
-<img src="worldturtle-examples/lsystem/output.gif" width="400"/>
-</p>
+![lsystem animation](worldturtle-examples/lsystem/output.gif)
+
+</details>
 
 ## Building a project
 
