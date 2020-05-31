@@ -2,13 +2,12 @@
 
 ## Turtle Animations in Haskell
 
-![parallel cirlces animation](worldturtle/docs/images/parallel_circles_animated.gif)
-
-WorldTurtle is a Haskell take
-on [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics).
+WorldTurtle is a Haskell take on [Turtle Graphics][Turtle graphics wiki].
 
 The intent of this module is a teaching tool by using turtle commands to
 produce animations.
+
+![parallel cirlces animation](worldturtle/docs/images/parallel_circles_animated.gif)
 
 ## Features
 
@@ -149,3 +148,4 @@ stack exec parallelcircles-exe
 
 [Hackage page]: https://hackage.haskell.org/package/worldturtle
 [Hackage badge]: https://img.shields.io/hackage/v/worldturtle
+[Turtle graphics wiki]: https://en.wikipedia.org/wiki/Turtle_graphics
