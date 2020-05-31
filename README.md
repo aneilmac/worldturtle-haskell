@@ -4,7 +4,7 @@
 
 ![parallel cirlces animation](worldturtle/docs/images/parallel_circles_animated.gif)
 
-[WorldTurtle](https://hackage.haskell.org/package/worldturtle) is a Haskell take
+WorldTurtle is a Haskell take
 on [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics).
 
 The intent of this module is a teaching tool by using turtle commands to
