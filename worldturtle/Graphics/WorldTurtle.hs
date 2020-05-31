@@ -1,41 +1,45 @@
-{-|
-Module      : Graphics.WorldTurtle
-Description : WorldTurtle
-Copyright   : (c) Archibald Neil MacDonald, 2020
-License     : BSD3
-Maintainer  : FortOyer@hotmail.co.uk
-Stability   : experimental
-Portability : POSIX
-
-"Graphics.WorldTurtle" is a module for writing and rendering turtle graphics
-in Haskell.
-
-Take a look at the
-     [examples](https://github.com/FortOyer/worldturtle-haskell#examples) on
-Github!
-
+{- | 
+    Module      : Graphics.WorldTurtle
+    Description : WorldTurtle
+    Copyright   : (c) Archibald Neil MacDonald, 2020
+    License     : BSD3
+    Maintainer  : FortOyer@hotmail.co.uk
+    Stability   : experimental
+    Portability : POSIX
+  
+    "Graphics.WorldTurtle" is a module for writing and rendering turtle graphics
+    in Haskell.
+  
+    Take a look at the
+         [examples](https://github.com/FortOyer/worldturtle-haskell#examples) on
+    Github!
 -}
 module Graphics.WorldTurtle
-     ( 
-     -- * Running the world
+     (
+     -- * Running a WorldTurtle simulation.
+     -- * Running on a single turtle.
      -- $running
-     -- $interacting
-       WorldCommand
+       runTurtle
+     , TurtleCommand
+     -- * Running a world of turtles.
+     -- $multiturtle
      , runWorld
-     , runTurtle
-     , TurtleCommand 
+     , WorldCommand
      , run 
      , (>/>)
      -- * Parallel animation
      -- $parallel
      , (<|>)
+     -- * Stop an animation
+     -- $empty
+     , empty
      -- * Further documentation
      , module Graphics.WorldTurtle.Commands
      , module Graphics.WorldTurtle.Shapes
      , module Graphics.WorldTurtle.Color
      ) where
 
-import Control.Applicative ((<|>))
+import Control.Applicative (empty, (<|>))
 
 import Graphics.Gloss.Data.Display (Display (..))
 import qualified Graphics.Gloss.Data.ViewState as G
@@ -49,16 +53,34 @@ import Graphics.WorldTurtle.Internal.Commands (TurtleCommand, seqT
                                               , WorldCommand (..), seqW)
 import Graphics.WorldTurtle.Shapes
 
+-- | This is a convenient simplification of `runWorld` where we implicitly
+--   create a single turtle and execute the given commands on this turtle.
+runTurtle :: TurtleCommand () -- ^ Command sequence to execute.
+          -> IO ()
+runTurtle c = runWorld $ makeTurtle >>= run c
+
 {- | `runWorld` takes a `WorldCommand` and produces the animation in a new
-     window! 
+      window! 
 
-     The simplest way to run `runWorld` is to execute it directly from 
-     your main function like so:
-
-     @
-         main :: IO ()
-         main = runWorld yourOwnCoolCommand
-     @
+   ==  Interacting with the window.
+   
+   While running, you can interact with the window in the following way:
+   
+   +------------------------------------------+-------------------+
+   | Action                                   | Interaction       |
+   +==========================================+===================+
+   | Pan the viewport.                        | Click and drag    |
+   +------------------------------------------+-------------------+
+   | Zoom in/out.                             |Mousewheel up/down |
+   +------------------------------------------+-------------------+
+   | Reset the viewport to initial position.  | Spacebar          |
+   +------------------------------------------+-------------------+
+   | Reset the animation.                     | @R@ key           |
+   +------------------------------------------+-------------------+
+   | Pause the animation.                     | @P@ key           |
+   +------------------------------------------+-------------------+
+   | Quit                                     | Escape key        |
+   +------------------------------------------+-------------------+
 -}
 runWorld :: WorldCommand () -- ^ Command sequence to execute
           -> IO ()
@@ -80,54 +102,43 @@ runWorld tc = G.play display white 30 defaultWorld iterateRender input timePass
          | running w = w { elapsedTime = f + elapsedTime w }
          | otherwise = w
 
--- | This is a convenient simplification of `runWorld` where we implicitly
---   create a single turtle and execute this.
-runTurtle :: TurtleCommand () -> IO ()
-runTurtle c = runWorld $ makeTurtle >>= run c
-
--- | `run` takes a `Turtle`, and a `TurtleCommand`. The command is applied
---   to the turtle, and the result of the computation is returned as a 
---   `WorldCommand`!
+-- | `run` takes a `TurtleCommand` and a `Turtle` to execute the command on. 
+--  The result of the computation is returned wrapped in a `WorldCommand`.
 --
---  For example, to get a turtle's @(x, y)@ `position` one might write:
+--  For example, to create  a turtle and get its @x@ `position` one might 
+--  write:
 --
---  @
---    myCommand :: WorldCommand ()
---    myCommand = do
---      t <- makeTurtle
---      (x, y) <- run t position
---  @
+--  >  myCommand :: Turtle -> WorldCommand Float
+--  >  myCommand t = do
+--  >    (x, _) <- run position t
+--  >    return x
 --
--- Or to draw a right angle:
+--  Or to create a command that accepts a turtle and draws a right angle:
 --
---  @
---    myCommand :: WorldCommand ()
---    myCommand = makeTurtle >>= run $ forward 10 >> right 90 >> forward 10
---  @
---
-run :: TurtleCommand a 
-    -> Turtle
-    -> WorldCommand a
+--  > myCommand :: Turtle -> WorldCommand ()
+--  > myCommand = run $ forward 10 >> right 90 >> forward 10
+run :: TurtleCommand a -- ^ Command to execute
+    -> Turtle -- ^ Turtle to apply the command upon.
+    -> WorldCommand a -- ^ Result as a `WorldCommand`
 run c = WorldCommand . seqT c
 
--- | Infix version of `run`.
---   This is a convenience function.
--- 
---   To draw a right angle:
+-- | This is an infix version of `run` where the arguments are swapped.
 --
---  @
---    myCommand :: WorldCommand ()
---    myCommand = do
---      t <- makeTurtle
---      t >/> do 
---        forward 10
---        right 90
---        forward 10
---  @
+--   We take a turtle and a command to execute on the turtle.
+--   The result of the computation is returned wrapped in a `WorldCommand`.
 --
--- Equivalent: @(>/>) = flip . run@
+--   To create a turtle and draw a right-angle:
 --
-(>/>) :: Turtle -> TurtleCommand a -> WorldCommand a
+--   > myCommand :: WorldCommand ()
+--   > myCommand = do
+--   >   t <- makeTurtle
+--   >   t >/> do 
+--   >     forward 10
+--   >     right 90
+--   >     forward 10
+(>/>) :: Turtle -- ^ Turtle to apply the command upon.
+      -> TurtleCommand a -- ^ Command to execute
+      -> WorldCommand a -- ^ Result as a `WorldCommand`
 (>/>) = flip run
 infixl 4 >/>
 
@@ -156,80 +167,88 @@ isPauseKey_ (G.EventKey (G.Char 'p') G.Down _ _)  = True
 isPauseKey_ (G.EventKey (G.Char 'P') G.Down _ _)  = True
 isPauseKey_ _ = False
 
-{- $interacting
-
-   While running, you can interact with the window in the following way:
-   
-   +------------------------------------------+-------------------+
-   | Action                                   | Interaction       |
-   +==========================================+===================+
-   | Pan the viewport.                        | Click and drag    |
-   +------------------------------------------+-------------------+
-   | Zoom in/out.                             |Mousewheel up/down |
-   +------------------------------------------+-------------------+
-   | Reset the viewport to initial position.  | Spacebar          |
-   +------------------------------------------+-------------------+
-   | Reset the animation.                     | @R@ key           |
-   +------------------------------------------+-------------------+
-   | Pause the animation.                     | @P@ key           |
-   +------------------------------------------+-------------------+
-   | Quit                                     | Escape key        |
-   +------------------------------------------+-------------------+
--}
-
 {- $running
 
-It is easy to create and animate a turtle. You just pass your commands to
-`runWorld` like so:
+  It is easy to  animate a turtle. You just pass your commands to
+  `runTurtle` like so:
 
-@
-     import Control.Monad (replicateM_)
-     import Graphics.WorldTurtle
+  >    import Control.Monad (replicateM_)
+  >    import Graphics.WorldTurtle
+  >
+  >    drawSquare :: Float -> TurtleCommand ()
+  >    drawSquare size = replicateM_ 4 $ forward size >> right 90
+  >
+  >    main :: IO ()
+  >    main = runTurtle $ drawSquare 100
 
-     myCommand :: WorldCommand ()
-     myCommand = do 
-       t <- makeTurtle
-       t >/> replicateM_ 4 (forward 90 t >> right 90 t)
+   Which will produce this animation.
 
-     main :: IO ()
-     main = runWorld myCommand
-@
+   ![basic_turtle_square gif](docs/images/basic_turtle_square.gif)
+-}
 
-Which will produce this animation
+{- $multiturtle
+   
+   For executing commands on multiple turtles, we use `runWorld` which
+   executes on `WorldCommand`s. Here is an example where 2 turtles draw
+   independently:
 
-![basic_turtle_square gif](docs/images/basic_turtle_square.gif)
+   > import Graphics.WorldTurtle
+   >
+   > main :: IO ()
+   > main = runWorld $ do
+   >   t1 <- makeTurtle
+   >   t2 <- makeTurtle
+   > 
+   >   t1 >/> circle 90 
+   >   t2 >/> circle (-90)
 
-If you only need to animate a single turtle, you can use `runTurtle` instead
-for convenience. This is equivalent:
-
-@
-     import Control.Monad (replicateM_)
-     import Graphics.WorldTurtle
-
-     myCommand :: TurtleCommand ()
-     myCommand = replicateM_ 4 $ do
-          forward 90 t
-          right 90 t
-
-     main :: IO ()
-     main = runTurtle myCommand
-@
-
+   Notice that with `runTurtle` we would apply the `circle` command on an 
+   implicit turtle generated for us, but in a `WorldCommand` context we must 
+   create our own turtles with `makeTurtle`! We them  apply the `TurtleCommand`
+   on our turtles using the run operator `(>/>)`.
 -}
 
 {- $parallel
 
-   We already know that `WorldCommand`s can be combined with `(>>)`, but the
-   alternative operation `(<|>)` can alo be used to combine two 
-   `WorldCommand`s. This has a special meaning: do both animations at the 
-   same time!
+   #parallel#
 
-   ![parallel and serial gif](docs/images/parallel_serial_turtles.gif)
+   While `WorldCommand`s can be combined with `(>>)` to produce sequential
+   instructions, we can also use the
+   alternative operator `(<|>)` to achieve parallel instructions. That is: 
+   animate two turtles at time!
 
-   Note that the result of @a \<|\> b@ is:
+   Here is an example:
+
+   >  import Graphics.WorldTurtle
+   >
+   >  main :: IO ()
+   >  main = runWorld $ do
+   >    t1 <- makeTurtle' (0, 0) north green
+   >    t2 <- makeTurtle' (0, 0) north red
+   >
+   >    -- Draw the anticlockwise and clockwise circles in sequence. 
+   >    t1 >/> circle 90 >> t2 >/> circle (-90)
+   >  
+   >    clear
+   >
+   >    -- Draw the anticlockwise and clockwise circles in parallel.
+   >    t1 >/> circle 90 <|> t2 >/> circle (-90)
+
+   Which would produce an animation like this
+
+   ![parallel and serial gif](docs/images/parallel_serial_turtles_2.gif)
+
+   Note that the result of @x \<|\> y@ is:
    
-   >>> a <|> b
-   a
+   >>> x <|> y
+   x
 
-   when /a/ is not `Control.Monad.mzero`.
+   when @x@ is not `Control.Applicative.empty`, otherwise the result is @y@.
+-}
+
+{- $empty
+   If a `WorldCommand` is `Control.Applicative.empty`, then this stops this 
+   section of  animation and it does not progress. To this end 
+   `Control.Monad.guard` can be used to calculate when to stop part of an 
+   animation sequence.
 -}
