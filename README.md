@@ -78,11 +78,19 @@ For all examples, look [here](worldturtle-examples)!
 
 Here's some of my favorites:
 
-| Example | Output |
-|---------|--------|
-| [spiralstar](worldturtle-examples/spiralstar/Main.hs) |<img src="worldturtle-examples/spiralstar/output.gif" width="300" /> |
-| [spiralsquare](worldturtle-examples/spiralsquare/Main.hs) | <img src="worldturtle-examples/spiralsquare/output.gif" width="300"/> |
-| [lsystem](worldturtle-examples/lsystem/Main.hs) | <img src="worldturtle-examples/lsystem/output.gif" width="300"/> |
+### [spiralstar](worldturtle-examples/spiralstar/Main.hs) 
+
+<img src="worldturtle-examples/spiralstar/output.gif" width="400" />
+
+
+### [spiralsquare](worldturtle-examples/spiralsquare/Main.hs) 
+
+<img src="worldturtle-examples/spiralsquare/output.gif" width="400"/> 
+
+
+### [lsystem](worldturtle-examples/lsystem/Main.hs) 
+
+<img src="worldturtle-examples/lsystem/output.gif" width="400"/>
 
 ## Building a project
 
