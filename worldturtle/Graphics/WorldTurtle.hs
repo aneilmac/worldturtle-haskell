@@ -53,8 +53,14 @@ import Graphics.WorldTurtle.Internal.Commands (TurtleCommand, seqT
                                               , WorldCommand (..), seqW)
 import Graphics.WorldTurtle.Shapes
 
--- | This is a convenient simplification of `runWorld` where we implicitly
---   create a single turtle and execute the given commands on this turtle.
+-- | Takes a `TurtleCommand` and executes the command on an implicitly created
+--   turtle that starts at position @(0, 0)@ with heading `north`. 
+--
+--   This is a convenience function written in terms of `runWorld` as:
+--
+--   > runTurtle c = runWorld $ makeTurtle >>= run c
+--
+-- See also: `Graphics.WorldTurtle.Commands.makeTurtle`.
 runTurtle :: TurtleCommand () -- ^ Command sequence to execute.
           -> IO ()
 runTurtle c = runWorld $ makeTurtle >>= run c
@@ -169,7 +175,7 @@ isPauseKey_ _ = False
 
 {- $running
 
-  It is easy to  animate a turtle. You just pass your commands to
+  To start animating a single turtle, you just pass your commands to
   `runTurtle` like so:
 
   >    import Control.Monad (replicateM_)
@@ -189,8 +195,8 @@ isPauseKey_ _ = False
 {- $multiturtle
    
    For executing commands on multiple turtles, we use `runWorld` which
-   executes on `WorldCommand`s. Here is an example where 2 turtles draw
-   independently:
+   executes on `WorldCommand`s. Here is an example where 2 turtles draw a
+   circle independently:
 
    > import Graphics.WorldTurtle
    >
@@ -202,9 +208,8 @@ isPauseKey_ _ = False
    >   t1 >/> circle 90 
    >   t2 >/> circle (-90)
 
-   Notice that with `runTurtle` we would apply the `circle` command on an 
-   implicit turtle generated for us, but in a `WorldCommand` context we must 
-   create our own turtles with `makeTurtle`! We them  apply the `TurtleCommand`
+   Notice that in a `WorldCommand` context we must create our own turtles with 
+   `makeTurtle`! We them  apply the `TurtleCommand`
    on our turtles using the run operator `(>/>)`.
 -}
 

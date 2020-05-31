@@ -71,7 +71,7 @@ instance MonadFail TurtleCommand where
     `Graphics.WorldTurtle.run` function or the 
     `Graphics.WorldTurtle.>/>` operator.
 
-    For how to achieve parallel animations, 
+    For how to achieve parallel animations
     see "Graphics.WorldTurtle#parallel".
 -}
 newtype WorldCommand a = WorldCommand 
