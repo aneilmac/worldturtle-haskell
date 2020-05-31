@@ -2,13 +2,12 @@
 -- https://juliagraphics.github.io/Luxor.jl/stable/turtle/
 module Main where
 
-import Graphics.Gloss.Geometry.Angle (degToRad)
 import Graphics.WorldTurtle
 
 hilbert :: Int -> Float -> Float -> TurtleCommand ()
 hilbert 0 _ _ = pure ()
 hilbert level angle lengthStep = do
-  penColor >>= \c -> setPenColor $ shiftHue (degToRad 0.1) c
+  penColor >>= setPenColor . shiftHue 0.1
 
   left angle
   hilbert' (-angle)

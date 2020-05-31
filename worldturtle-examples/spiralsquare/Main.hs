@@ -4,11 +4,10 @@ module Main where
 
 import Control.Monad (forM_)
 
-import Graphics.Gloss.Geometry.Angle (degToRad)
 import Graphics.WorldTurtle
 
 forwards :: [Float]
-forwards = take 400 $ map (+1) [0, 0.75..]
+forwards = take 400 [1, 1.75..]
 
 spiral :: TurtleCommand ()
 spiral = do
@@ -19,7 +18,7 @@ spiral = do
   forM_ forwards $ \ f -> do
     forward f
     left 89.5
-    penColor >>= \c -> setPenColor $ shiftHue (degToRad 1) c
+    penColor >>= setPenColor . shiftHue 1
 
 main :: IO ()
 main = runTurtle spiral

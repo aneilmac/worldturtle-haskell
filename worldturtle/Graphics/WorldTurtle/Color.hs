@@ -19,11 +19,14 @@ import Data.Matrix
 
 import Graphics.Gloss.Data.Color
 
+import Graphics.WorldTurtle.Internal.Coords (degToRad)
+
 -- | Rotates a given color's hue between [0, 360) degrees.
 shiftHue :: Float -- ^ Degrees to change hue.
          -> Color -- ^ Color to shift.
          -> Color -- ^ Resultant color with hue shifted.
-shiftHue d c = let hMatrix = hueMatrix d
+shiftHue d c = let d' = degToRad d -- Radians to degrees
+                   hMatrix = hueMatrix d'
                    (r, g, b, a) = rgbaOfColor c
                    cMatrix = fromList 1 3 [r, g, b]
                    cMatrix' = cMatrix * hMatrix

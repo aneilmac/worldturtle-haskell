@@ -7,6 +7,7 @@
   command block.
 * Added `runWorld`, `runTurtle`, `run`, and `(>/>)` functions.
 * `circle` command split into `arc` and `circle` commands.
+* Fixed `shiftHue` documentation not matching not matching reality of function.
 
 ## v0.1.2
 
