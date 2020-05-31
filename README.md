@@ -1,6 +1,6 @@
 # WorldTurtle: Turtle Animations in Haskell
 
-![parallel cirlces animation](worldturtle/docs/images/parallel_circles_animated_300.gif)
+![parallel cirlces animation](worldturtle/docs/images/parallel_circles_animated.gif)
 
 [WorldTurtle](https://hackage.haskell.org/package/worldturtle) is a Haskell take
 on [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics).
