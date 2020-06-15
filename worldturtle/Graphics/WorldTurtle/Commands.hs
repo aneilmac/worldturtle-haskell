@@ -45,6 +45,7 @@ module Graphics.WorldTurtle.Commands
   , setRotationSpeed
   -- * Styling commands.
   , stamp
+  , representation
   -- ** Query turtle's state.
   , position
   , heading
@@ -53,7 +54,6 @@ module Graphics.WorldTurtle.Commands
   , penColor
   , penDown
   , penSize
-  , representation
   , visible
   -- ** Mutate turtle's state.
   , branch
@@ -90,12 +90,15 @@ import Graphics.Gloss.Data.Picture
 Creates a new `Turtle` and displays it on the canvas. This turtle can then be
 manipulated! For example, to create a turtle and then move the turtle forward:
 
-  >  main:: IO ()
-  >  main = runWorld $ do
-  >    t <- makeTurtle
-  >    t >/> forward 90
+   @
+    main:: IO ()
+    main = runWorld $ do
+      t <- makeTurtle
+      t >/> forward 90
+   @
 
-The default turtle starts at position @(0, 0)@ and is orientated `north`.
+The default turtle starts at position (0, 0) and is orientated `north`.
+
 -}
 makeTurtle :: WorldCommand Turtle
 makeTurtle = WorldCommand generateTurtle
@@ -103,11 +106,13 @@ makeTurtle = WorldCommand generateTurtle
 {-| This variant of `makeTurtle` takes a starting position, a starting 
     orientation, and a color to apply to the turtle and the turtle's pen.
 
-    >  myCommand :: WorldCommand ()
-    >  myCommand = do
-    >    t1 <- makeTurtle' (0, 0)  0 green
-    >    t2 <- makeTurtle' (0, 0) 90 red
-    >    t1 >/> forward 90 <|> t2 >/> forward 90
+    @
+      myCommand :: WorldCommand ()
+      myCommand = do
+        t1 <- makeTurtle' (0, 0)  0 green
+        t2 <- makeTurtle' (0, 0) 90 red
+        (t1 >/> forward 90) \<|\> (t2 >/> forward 90)
+    @
 
     See `makeTurtle`.
 -}
@@ -203,7 +208,7 @@ rotateTo_  rightBias !r = TurtleCommand $ \ turtle -> do
       turtLens_ turtle . T.heading .= newHeading
 
 -- | Draw a circle with a given @radius@. The center is @radius@ units left of 
---   the turtle if positive. Otherwise  @radius@ units right of the turtle 
+--   the @turtle@ if positive. Otherwise  @radius@ units right of the @turtle@ 
 --   if negative.
 --
 --   The circle is drawn in an anticlockwise direction if the radius is 
@@ -244,7 +249,7 @@ calculateNewPointC_ !p !radius !startAngle !angle = (px, py)
                                          else startAngle - angle
 
 -- | Draw an arc with a given @radius@. The center is @radius@ units left of the
---   turtle if positive. Otherwise  @radius@ units right of the turtle if 
+--   @turtle@ if positive. Otherwise  @radius@ units right of the @turtle@ if 
 --   negative.
 --
 --   The arc is drawn in an anticlockwise direction if the radius is positive,
@@ -282,7 +287,7 @@ position :: TurtleCommand P.Point -- ^ Returned current point.
 position = getter_ (0, 0) T.position
 
 -- | Warps the turtle to its starting position @(0, 0)@ and resets the
---   orientation to `north` (@90@ degrees). No line is drawn moving the turtle.
+--   orientation to @North@ (90 degrees). No line is drawn moving the turtle.
 home :: TurtleCommand ()
 home = TurtleCommand $ \ turtle -> do
   let ts = turtLens_ turtle
@@ -373,7 +378,7 @@ setVisible = setter_ T.visible
 
 -- | Returns the turtle's current speed.
 --   Speed is is @distance@ per second.
---   A speed of @0@ is equivalent to no animation being performed and instant 
+--   A speed of @0 is equivalent to no animation being performed and instant 
 --   movement.
 -- The default value is @200@.
 speed :: TurtleCommand Float -- ^ Speed of turtle.
@@ -407,14 +412,16 @@ representation = getter_ blank T.representation
    See `representation`.
    For example, to set the turtle as a red circle:
    
-  >  import Graphics.WorldTurtle
-  >  import qualified Graphics.Gloss.Data.Picture as G
-  >
-  >  myCommand :: TurtleCommand ()
-  >  myCommand = do
-  >    setPenColor red
-  >    setRepresentation (G.color red $ G.circleSolid 10)
-  >    forward 90
+   @
+    import Graphics.WorldTurtle
+    import qualified Graphics.Gloss.Data.Picture as G
+
+    myCommand :: TurtleCommand ()
+    myCommand = do
+      setPenColor red
+      setRepresentation (G.color red $ G.circleSolid 10)
+      forward 90
+   @
 -}
 setRepresentation :: Picture -- ^ Picture to apply.
                   -> TurtleCommand ()
@@ -427,7 +434,7 @@ clear = WorldCommand $ pics .= []
 -- | Sleep for a given amount of time in seconds. When sleeping no animation 
 --   runs. A negative value will be clamped to @0@.
 sleep :: Float -> WorldCommand ()
-sleep = WorldCommand . decrementSimTime . max 0
+sleep = WorldCommand . (\t -> decrementSimTime t ()) . max 0
 
 -- | Given a command, runs the command, then resets the turtle's state back to
 --   what the state was before the command was run.
@@ -463,8 +470,8 @@ south = 270
 turtLens_ :: Applicative f 
           => Turtle 
           -> (T.TurtleData -> f T.TurtleData) 
-          -> TSC b 
-          -> f (TSC b) 
+          -> TSC
+          -> f TSC 
 turtLens_ t = turtles . ix t
 {-# INLINE turtLens_ #-}
 

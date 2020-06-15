@@ -1,11 +1,10 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_HADDOCK hide #-}
 {-# LANGUAGE BangPatterns #-}
+{-# OPTIONS_HADDOCK hide #-}
 module Graphics.WorldTurtle.Internal.Sequence
   ( Turtle 
   , TSC
   , SequenceCommand
-  , AlmostVal
   , renderTurtle
   , addPicture
   , simTime
@@ -26,31 +25,25 @@ import Graphics.WorldTurtle.Internal.Turtle
 
 import Graphics.Gloss.Data.Picture (Picture, pictures)
 
-import Control.Monad.Cont
-import Control.Monad.State
+import Control.Monad (when)
+import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans.Except
+import Control.Monad.Trans.State
 
 import Control.Lens
-
-import Data.Void (Void, absurd)
-import Data.Maybe (isNothing, isJust)
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
--- | AlmostVal represents a computation that can "almost" complete. Either
---   There is enough time to solve the computation, or the computation needs
---   to exit early as there is not enough time to fully run the computation.
-type AlmostVal a = Maybe a
-
 -- | State Monad that takes our `TSC` type as its state object.
-type TurtleState b = State (TSC b)
+type TurtleState = State TSC
 
 -- | Continuation Monad on top of the State Monad of form @SequenceCommand b a@.
 --   /b/ is the final return type of the entire Monad sequence - this is what 
 --   will be returned if/when we need to exit early from anywhere in a great big
 --   sequence of steps. /a/ is the return type of the current step of the 
 --   animation sequence. That is: what will be passed into the next step.
-type SequenceCommand b a = ContT b (TurtleState b) a
+type SequenceCommand b a = ExceptT b TurtleState a
 
 -- Careful of editing the Turtle comment below as it is public docs!
 -- Really "Turtle" is just a handle to internal TurtleData. It is a key that
@@ -61,9 +54,8 @@ type SequenceCommand b a = ContT b (TurtleState b) a
 -- `Graphics.WorldTurtle.Commands.makeTurtle`.
 newtype Turtle = Turtle Int deriving (Eq, Ord)
 
-data TSC b = TSC
+data TSC = TSC
   { _pics :: ![Picture] -- ^ All pictures that make up the current canvas
-  , _exitCall :: SequenceCommand b b -- ^ Stop drawing call for animations
   , _totalSimTime :: !Float -- ^ Remaining available for animating
   , _turtles :: Map Turtle TurtleData  -- Collection of all turtles.
   , _nextTurtleId :: !Int -- ^ ID of next turtle to be generated.
@@ -74,11 +66,10 @@ $(makeLenses ''TSC)
 -- | Generates default parameter arguments. The TSC returned by this value
 -- must never be used for sequencing as the exitCall is undefined and will only
 -- be defined in the setup stage of the animation process.
-defaultTSC :: Float -> TSC b
+defaultTSC :: Float -> TSC
 defaultTSC givenTime = TSC 
            { _pics = []
            , _totalSimTime = givenTime
-           , _exitCall = error "Exit called but not defined in animation."
            , _turtles = Map.empty
            , _nextTurtleId = 0
            }
@@ -93,51 +84,50 @@ simTime = use totalSimTime
 -- | Sets the simulation time in the state monad.
 -- If the simulation time is <= 0 then this setter will immediately call the
 -- exit function which will kill any further processing of the monad.
-setSimTime :: Float -> SequenceCommand b ()
-setSimTime newTime = do
+setSimTime :: Float
+           -> b
+           -> SequenceCommand b ()
+setSimTime newTime e = do
   let newTime' = max 0 newTime
   totalSimTime .= newTime'
-  when (newTime' <= 0) failSequence
+  when (newTime' <= 0) (failSequence e)
 
 -- | Takes a value away form the current sim time and store the updated time.
 -- See `setSimTime`.
-decrementSimTime :: Float -- ^ Value to subtract from store simulation time. 
+decrementSimTime :: Float -- ^ Value to subtract from store simulation time.
+                 -> b -- ^ Value to throw if fails.
                  -> SequenceCommand b ()
-decrementSimTime duration = simTime >>= setSimTime . flip (-) duration
+decrementSimTime duration e = simTime >>= \ t -> setSimTime (t - duration) e
 
 -- | Given a picture, adds it to the picture list.
 addPicture :: Picture -- ^ Picture to add to our animation
            -> SequenceCommand b ()
 addPicture p = pics %= (p :)
 
--- | Never call an animation directly, always call this instead!
--- This is part of our setup stage to inject the exit call into the animation
--- before running the animation. What is returned by this class is either
--- the completed animation or an early exit. 
---
--- We take our command and an exit call, and store the exit in the state monad 
--- then execute the command.
--- The return value is either a `Nothing` which means the exit was called early
--- or a `Just a` which is the monad successfully completed.
-exitCondition :: SequenceCommand (AlmostVal a) a -- ^ Animation passed in.
-              -> SequenceCommand (AlmostVal a) (AlmostVal a)
-exitCondition commands = callCC $ \exit -> do
-    exitCall .= exit Nothing
-    decrementSimTime 0 -- In case we are already at a time of 0.
-    Just <$> commands
-
-processTurtle :: SequenceCommand (AlmostVal a) a 
-              -> TSC (AlmostVal a)
-              -> (AlmostVal a, TSC (AlmostVal a))
+-- | Given a sequence and a State, returns the result of the computation and the
+--   final state of the computation. When the result is @Right@, then the 
+--   computation completed, otherwise the computation ended early due to lack of
+--   time available (partial animation).
+processTurtle :: SequenceCommand b a 
+              -> TSC
+              -> (Either b a, TSC)
 processTurtle commands tsc = 
-  let drawS = runContT (exitCondition commands) return
+  let drawS = runExceptT $ commands
    in runState drawS tsc
 
-renderTurtle :: SequenceCommand (AlmostVal a) a -> Float ->  Picture
-renderTurtle c f = let (_, s) = processTurtle c (defaultTSC f)
+-- | Given a computation to run and an amount of time to run it in, renders the
+--   final "picture".
+renderTurtle :: Monoid b 
+             => SequenceCommand b a 
+             -> Float 
+             -> Picture
+renderTurtle c f = let (_, s) = processTurtle c' t
+                       c' = decrementSimTime 0 mempty >> c
+                       t  = defaultTSC f
                     in pictures $ s ^. pics ++ drawTurtles (s ^. turtles)
 
-drawTurtles :: Map Turtle TurtleData -> [Picture]
+drawTurtles :: Map Turtle TurtleData 
+            -> [Picture]
 drawTurtles m = drawTurtle <$> Map.elems m 
 
 generateTurtle :: SequenceCommand b Turtle
@@ -149,8 +139,8 @@ generateTurtle = do
 
 animate' :: Float 
          -> Float 
-         -> (Float -> SequenceCommand b a) 
-         -> SequenceCommand b a
+         -> (Float -> SequenceCommand a a) 
+         -> SequenceCommand a a
 animate' !distance !turtleSpeed callback =
    let !duration = distance / turtleSpeed
        !d' = if isNaN duration || isInfinite duration then 0 else duration
@@ -158,7 +148,9 @@ animate' !distance !turtleSpeed callback =
        --   user-space.
      in animate (abs d') callback
 
-animate :: Float -> (Float -> SequenceCommand b a) -> SequenceCommand b a
+animate :: Float 
+        -> (Float -> SequenceCommand a a) 
+        -> SequenceCommand a a
 animate !duration callback = do
    timeRemaining <- simTime -- simulation time to go
    let !availableTime = min timeRemaining duration
@@ -168,7 +160,7 @@ animate !duration callback = do
    --   is 0 we say "don't do any animation"
    t <- callback timeQuot 
    --  Perform the calculation with the quotient for lerping
-   decrementSimTime availableTime 
+   decrementSimTime availableTime t
    --  Test to see if this is the end of our animation and if so exit early
    return t
 
@@ -176,85 +168,69 @@ animate !duration callback = do
 --   to the result of both.
 --   This combination can only return if both A and B return. Compare to 
 --   `alternateSequence` which can return if one returns.
-combineSequence :: Semigroup a
+combineSequence :: (Semigroup a, Monoid b)
                 => SequenceCommand b a -- ^ Sequence /a/ to run.
                 -> SequenceCommand b a -- ^ Sequence /b/ to run.
                 -> SequenceCommand b a 
                     -- ^ New sequence of A and B in parallel.
 combineSequence a b = do
-  (!aVal, !bVal) <- runParallel a b
-  -- If either attempt failed, we fail also.
-  when (isNothing aVal || isNothing bVal) failSequence
-
-  -- Everything is hunky dory so we continue on into the next bind of the monad.
-  let (Just !aVal') = aVal
-  let (Just !bVal') = bVal
-  return $ aVal' <> bVal'
+  (aVal, bVal) <- runParallel a b
+  combo aVal bVal
+  where combo (Right x) (Right y) = return (x <> y)
+        combo (Left x) (Right _)  = throwE x
+        combo (Right _) (Left y)  = throwE y
+        combo (Left x) (Left y)   = throwE (x <> y)
 
 -- | Runs two items in sequence, returns the result of /a/ if /a/ passes,
 --   otherwise returns the results of /b/. The implication of this is that only
 --   the result of a will be returned while animating, and b when animation is
 --   finished.
-alternateSequence :: SequenceCommand b a -- ^ Sequence /a/ to run.
+alternateSequence :: Monoid b
+                  => SequenceCommand b a -- ^ Sequence /a/ to run.
                   -> SequenceCommand b a -- ^ Sequence /b/ to run.
                   -> SequenceCommand b a
 alternateSequence a b = do
-  (!aVal, !bVal) <- runParallel a b
-  
-  -- If both values failed we fail also.
-  when (isNothing aVal && isNothing bVal) failSequence
-
-  -- If A passes, return the value of A, otherwise return the value of B.
-  if isJust aVal 
-    then let (Just !aVal') = aVal in return $! aVal'
-    else let (Just !bVal') = bVal in return $! bVal'
+  (aVal, bVal) <- runParallel a b
+  combo aVal bVal
+  where combo (Right x) _       = return x
+        combo _ (Right y)       = return y
+        combo (Left x) (Left y) = throwE (x <> y)
 
 -- | Given two sequences /a/ and /b/, instead of running them both as separate 
 --   animations, run them both in parallel!
-runParallel :: SequenceCommand c a -- ^ Sequence /a/ to run.
-            -> SequenceCommand c b -- ^ Sequence /b/ to run.
-            -> SequenceCommand c (AlmostVal a, AlmostVal b)
+runParallel :: Monoid e 
+            => SequenceCommand b a -- ^ Sequence /a/ to run.
+            -> SequenceCommand d c -- ^ Sequence /b/ to run.
+            -> SequenceCommand e (Either b a, Either d c)
                -- ^ New sequence of A and B which returns both results.
 runParallel a b = do
+
   startSimTime <- use totalSimTime
-  parentExitCall <- use exitCall
 
-  -- Run A, and return back to this point when/if it fails.
-  aVal <- callCC $ \ exitFromA -> do
-    exitCall .= exitFromA Nothing
-    Just <$> a
-
-  aSimTime <- use totalSimTime
+  s <- lift get
+  let (aVal, s') = processTurtle a s
+  lift $ put s'
   
-  -- Run B, and return back to this point when/if it fails.
-  bVal <- callCC $ \ exitFromB -> do
-    exitCall .= exitFromB Nothing
-    totalSimTime .= startSimTime -- restart sim time back to initial.
-    Just <$> b
+  aSimTime <- use totalSimTime
 
+  let (bVal, s'') = processTurtle b (s' & totalSimTime .~ startSimTime)
+  
+  lift $ put s''
+  
   bSimTime <- use totalSimTime
-
+ 
   -- No subsequent animation can proceed until the longest animation completes.
   -- We take the remaining animation time to the remaining time of the longest 
   -- running animation.
   totalSimTime .= min aSimTime bSimTime
 
-  exitCall .= parentExitCall  -- Let us exit properly again!
-
   -- Now we must test the remaining sim time. The above calls might have
   -- succeeded while still exhausting our remaining time -- which as far as
   -- animating is concerned is the same as not succeeding at all!
-  decrementSimTime 0
-
+  decrementSimTime 0 mempty
   return (aVal, bVal)
 
 -- | Calls our early exit and fails the callback. No calculations will be
 --   performed beyond this call.
-failSequence :: SequenceCommand b a
-failSequence = do
-  ex <- use exitCall
-  _ <- ex
-  -- We can never reach this point with our call to `ex`. So the return type
-  -- can be whatever we want it to be. Let's go crazy! 
-  let (Just x) = (Nothing :: Maybe Void)
-   in absurd x
+failSequence :: b -> SequenceCommand b a
+failSequence = throwE

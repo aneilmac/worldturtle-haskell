@@ -3,6 +3,7 @@ module Graphics.WorldTurtle.Internal.Commands
   ( SeqC
   , TurtleCommand (..)
   , WorldCommand (..)
+  , run
   ) where
 
 import Control.Applicative
@@ -12,7 +13,7 @@ import Graphics.Gloss.Data.Picture (text)
 
 import Graphics.WorldTurtle.Internal.Sequence
 
-type SeqC a = SequenceCommand (AlmostVal ()) a
+type SeqC a = SequenceCommand () a
 
 {-| A `TurtleCommand` represents an instruction to execute on a turtle.
     It could be as simple as "draw a line" or more complicated like 
@@ -56,7 +57,7 @@ instance Monad TurtleCommand where
 instance MonadFail TurtleCommand where
   fail t = TurtleCommand $ \ _ -> do
     addPicture $ text t
-    failSequence
+    failSequence ()
 
 {- | A `WorldCommand` represents an instruction that affects the entire 
      animation canvas.
@@ -90,7 +91,7 @@ instance Monad WorldCommand where
   (WorldCommand a) >>= f = WorldCommand $ a >>= \s -> seqW (f s)
 
 instance Alternative WorldCommand where
-  empty = WorldCommand failSequence
+  empty = WorldCommand $ failSequence ()
   (<|>) (WorldCommand a) (WorldCommand b) = WorldCommand $ alternateSequence a b
 
 instance Semigroup a => Semigroup (WorldCommand a) where
@@ -101,4 +102,24 @@ instance MonadPlus WorldCommand
 instance MonadFail WorldCommand where
   fail t = WorldCommand $ do
     addPicture $ text t
-    failSequence
+    failSequence ()
+
+-- | `run` takes a `TurtleCommand` and a `Turtle` to execute the command on. 
+--  The result of the computation is returned wrapped in a `WorldCommand`.
+--
+--  For example, to create  a turtle and get its @x@ `position` one might 
+--  write:
+--
+--  >  myCommand :: Turtle -> WorldCommand Float
+--  >  myCommand t = do
+--  >    (x, _) <- run position t
+--  >    return x
+--
+--  Or to create a command that accepts a turtle and draws a right angle:
+--
+--  > myCommand :: Turtle -> WorldCommand ()
+--  > myCommand = run $ forward 10 >> right 90 >> forward 10
+run :: TurtleCommand a -- ^ Command to execute
+    -> Turtle -- ^ Turtle to apply the command upon.
+    -> WorldCommand a -- ^ Result as a `WorldCommand`
+run c = WorldCommand . seqT c

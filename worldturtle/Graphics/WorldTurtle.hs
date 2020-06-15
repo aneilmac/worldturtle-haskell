@@ -49,8 +49,9 @@ import qualified Graphics.Gloss.Interface.Pure.Game as G
 import Graphics.WorldTurtle.Color
 import Graphics.WorldTurtle.Commands
 import Graphics.WorldTurtle.Internal.Sequence (renderTurtle)
-import Graphics.WorldTurtle.Internal.Commands (TurtleCommand, seqT
-                                              , WorldCommand (..), seqW)
+import Graphics.WorldTurtle.Internal.Commands ( TurtleCommand
+                                              , WorldCommand (..), seqW
+                                              , run)
 import Graphics.WorldTurtle.Shapes
 
 -- | Takes a `TurtleCommand` and executes the command on an implicitly created
@@ -107,26 +108,6 @@ runWorld tc = G.play display white 30 defaultWorld iterateRender input timePass
         timePass f w
          | running w = w { elapsedTime = f + elapsedTime w }
          | otherwise = w
-
--- | `run` takes a `TurtleCommand` and a `Turtle` to execute the command on. 
---  The result of the computation is returned wrapped in a `WorldCommand`.
---
---  For example, to create  a turtle and get its @x@ `position` one might 
---  write:
---
---  >  myCommand :: Turtle -> WorldCommand Float
---  >  myCommand t = do
---  >    (x, _) <- run position t
---  >    return x
---
---  Or to create a command that accepts a turtle and draws a right angle:
---
---  > myCommand :: Turtle -> WorldCommand ()
---  > myCommand = run $ forward 10 >> right 90 >> forward 10
-run :: TurtleCommand a -- ^ Command to execute
-    -> Turtle -- ^ Turtle to apply the command upon.
-    -> WorldCommand a -- ^ Result as a `WorldCommand`
-run c = WorldCommand . seqT c
 
 -- | This is an infix version of `run` where the arguments are swapped.
 --
