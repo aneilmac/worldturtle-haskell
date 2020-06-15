@@ -434,7 +434,7 @@ clear = WorldCommand $ pics .= []
 -- | Sleep for a given amount of time in seconds. When sleeping no animation 
 --   runs. A negative value will be clamped to @0@.
 sleep :: Float -> WorldCommand ()
-sleep = WorldCommand . (\t -> decrementSimTime t ()) . max 0
+sleep = WorldCommand . decrementSimTime () . max 0
 
 -- | Given a command, runs the command, then resets the turtle's state back to
 --   what the state was before the command was run.

@@ -84,20 +84,20 @@ simTime = use totalSimTime
 -- | Sets the simulation time in the state monad.
 -- If the simulation time is <= 0 then this setter will immediately call the
 -- exit function which will kill any further processing of the monad.
-setSimTime :: Float
-           -> b
+setSimTime :: b
+           -> Float
            -> SequenceCommand b ()
-setSimTime newTime e = do
+setSimTime e newTime = do
   let newTime' = max 0 newTime
   totalSimTime .= newTime'
   when (newTime' <= 0) (failSequence e)
 
 -- | Takes a value away form the current sim time and store the updated time.
 -- See `setSimTime`.
-decrementSimTime :: Float -- ^ Value to subtract from store simulation time.
-                 -> b -- ^ Value to throw if fails.
+decrementSimTime :: b -- ^ Value to throw if fails.
+                 -> Float -- ^ Value to subtract from store simulation time.
                  -> SequenceCommand b ()
-decrementSimTime duration e = simTime >>= \ t -> setSimTime (t - duration) e
+decrementSimTime e duration = simTime >>= \ t -> setSimTime e (t - duration)
 
 -- | Given a picture, adds it to the picture list.
 addPicture :: Picture -- ^ Picture to add to our animation
@@ -122,7 +122,7 @@ renderTurtle :: Monoid b
              -> Float 
              -> Picture
 renderTurtle c f = let (_, s) = processTurtle c' t
-                       c' = decrementSimTime 0 mempty >> c
+                       c' = decrementSimTime mempty 0 >> c
                        t  = defaultTSC f
                     in pictures $ s ^. pics ++ drawTurtles (s ^. turtles)
 
@@ -160,7 +160,7 @@ animate !duration callback = do
    --   is 0 we say "don't do any animation"
    t <- callback timeQuot 
    --  Perform the calculation with the quotient for lerping
-   decrementSimTime availableTime t
+   decrementSimTime t availableTime
    --  Test to see if this is the end of our animation and if so exit early
    return t
 
@@ -227,7 +227,7 @@ runParallel a b = do
   -- Now we must test the remaining sim time. The above calls might have
   -- succeeded while still exhausting our remaining time -- which as far as
   -- animating is concerned is the same as not succeeding at all!
-  decrementSimTime 0 mempty
+  decrementSimTime mempty 0 
   return (aVal, bVal)
 
 -- | Calls our early exit and fails the callback. No calculations will be
