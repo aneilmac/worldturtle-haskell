@@ -1,8 +1,8 @@
+{-# LANGUAGE BangPatterns #-}
 module Main where
 
-import Control.Monad
-
-import qualified Graphics.Gloss.Interface.Pure.Display as G
+import Control.Lens ((^.))
+import Control.Monad(replicateM_)
 
 import Graphics.WorldTurtle
 import Graphics.WorldTurtle.Internal.Commands
@@ -13,21 +13,14 @@ import System.Environment (getArgs)
 parallelCircles :: WorldCommand ()
 parallelCircles =  do
   -- Generate our turtles
-  t1 <- makeT 0  black
-  t2 <- makeT 90 blue
-  t3 <- makeT 180 red
-  t4 <- makeT 270 green
-
-  -- Run this animation on our turtles
-  replicateM_ 18 $ loop t1 <|> loop t2 <|> loop t3 <|> loop t4
-
-  where makeT r c = do -- Helper function for generating turtles.
-          t <- makeTurtle' (0, 0) r c
-          t >/> setSpeed 300
-          return t
-        loop = run $ circle 90 >> left 5
+  t1 <- makeTurtle
+  t2 <- makeTurtle
+  replicateM_ 10000 $ do
+    t1 >/> circle 90 <|> t2 >/> circle (-90)
 
 main :: IO ()
 main = do
   [t] <- getArgs
-  G.display G.FullScreen white $ renderTurtle (seqW parallelCircles) (read t)
+  (_, b) <- return $! processTurtle (seqW parallelCircles) (defaultTSC $ read t)
+  mapM_ (putStrLn . show) (b ^. pics)
+  return ()

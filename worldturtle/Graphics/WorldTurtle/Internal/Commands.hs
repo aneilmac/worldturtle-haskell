@@ -1,7 +1,6 @@
 {-# OPTIONS_HADDOCK hide #-}
 module Graphics.WorldTurtle.Internal.Commands
-  ( SeqC
-  , TurtleCommand (..)
+  ( TurtleCommand (..)
   , WorldCommand (..)
   , run
   ) where
@@ -12,8 +11,6 @@ import Control.Monad
 import Graphics.Gloss.Data.Picture (text)
 
 import Graphics.WorldTurtle.Internal.Sequence
-
-type SeqC a = SequenceCommand () a
 
 {-| A `TurtleCommand` represents an instruction to execute on a turtle.
     It could be as simple as "draw a line" or more complicated like 
@@ -40,7 +37,7 @@ type SeqC a = SequenceCommand () a
 -}
 newtype TurtleCommand a = TurtleCommand 
   { 
-    seqT :: Turtle -> SeqC a
+    seqT :: Turtle -> SequenceCommand a
   }
 
 instance Functor TurtleCommand where
@@ -57,7 +54,7 @@ instance Monad TurtleCommand where
 instance MonadFail TurtleCommand where
   fail t = TurtleCommand $ \ _ -> do
     addPicture $ text t
-    failSequence
+    fail t
 
 {- | A `WorldCommand` represents an instruction that affects the entire 
      animation canvas.
@@ -77,7 +74,7 @@ instance MonadFail TurtleCommand where
 -}
 newtype WorldCommand a = WorldCommand 
   { 
-    seqW :: SeqC a
+    seqW :: SequenceCommand a
   }
 
 instance Functor WorldCommand where
@@ -91,7 +88,7 @@ instance Monad WorldCommand where
   (WorldCommand a) >>= f = WorldCommand $ a >>= \s -> seqW (f s)
 
 instance Alternative WorldCommand where
-  empty = WorldCommand failSequence
+  empty = WorldCommand empty
   (<|>) (WorldCommand a) (WorldCommand b) = WorldCommand $ alternateSequence a b
 
 instance Semigroup a => Semigroup (WorldCommand a) where
@@ -102,7 +99,7 @@ instance MonadPlus WorldCommand
 instance MonadFail WorldCommand where
   fail t = WorldCommand $ do
     addPicture $ text t
-    failSequence
+    fail t
 
 -- | `run` takes a `TurtleCommand` and a `Turtle` to execute the command on. 
 --  The result of the computation is returned wrapped in a `WorldCommand`.
