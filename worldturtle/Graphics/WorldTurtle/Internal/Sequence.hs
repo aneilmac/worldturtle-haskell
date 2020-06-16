@@ -38,11 +38,12 @@ import qualified Data.Map.Strict as Map
 -- | State Monad that takes our `TSC` type as its state object.
 type TurtleState = State TSC
 
--- | Continuation Monad on top of the State Monad of form @SequenceCommand b a@.
---   /b/ is the final return type of the entire Monad sequence - this is what 
+-- | Exception Monad on top of the State Monad of form @SequenceCommand b a@.
+--   /b/ is the "early" return type of the entire Monad sequence - this is what 
 --   will be returned if/when we need to exit early from anywhere in a great big
 --   sequence of steps. /a/ is the return type of the current step of the 
---   animation sequence. That is: what will be passed into the next step.
+--   animation sequence. That is: what will be passed into the next step, and
+--   the final returned item if the animation completes.
 type SequenceCommand b a = ExceptT b TurtleState a
 
 -- Careful of editing the Turtle comment below as it is public docs!
@@ -63,9 +64,7 @@ data TSC = TSC
 
 $(makeLenses ''TSC)
 
--- | Generates default parameter arguments. The TSC returned by this value
--- must never be used for sequencing as the exitCall is undefined and will only
--- be defined in the setup stage of the animation process.
+-- | Generates default parameter arguments.
 defaultTSC :: Float -> TSC
 defaultTSC givenTime = TSC 
            { _pics = []
@@ -84,17 +83,17 @@ simTime = use totalSimTime
 -- | Sets the simulation time in the state monad.
 -- If the simulation time is <= 0 then this setter will immediately call the
 -- exit function which will kill any further processing of the monad.
-setSimTime :: b
-           -> Float
+setSimTime :: b -- ^ Value to throw if out of time.
+           -> Float -- ^ Time to set.
            -> SequenceCommand b ()
 setSimTime e newTime = do
   let newTime' = max 0 newTime
   totalSimTime .= newTime'
-  when (newTime' <= 0) (failSequence e)
+  when (newTime' <= 0) (throwE e)
 
 -- | Takes a value away form the current sim time and store the updated time.
 -- See `setSimTime`.
-decrementSimTime :: b -- ^ Value to throw if fails.
+decrementSimTime :: b -- ^ Value to throw if out of time.
                  -> Float -- ^ Value to subtract from store simulation time.
                  -> SequenceCommand b ()
 decrementSimTime e duration = simTime >>= \ t -> setSimTime e (t - duration)
@@ -105,9 +104,9 @@ addPicture :: Picture -- ^ Picture to add to our animation
 addPicture p = pics %= (p :)
 
 -- | Given a sequence and a State, returns the result of the computation and the
---   final state of the computation. When the result is @Right@, then the 
---   computation completed, otherwise the computation ended early due to lack of
---   time available (partial animation).
+--   final state of the computation of form @(r, s)@. When @r@ is @Right@, then 
+--   the computation completed, otherwise the computation ended early due to
+--   lack of time available (i.e. a partial animation).
 processTurtle :: SequenceCommand b a 
               -> TSC
               -> (Either b a, TSC)
@@ -232,5 +231,5 @@ runParallel a b = do
 
 -- | Calls our early exit and fails the callback. No calculations will be
 --   performed beyond this call.
-failSequence :: b -> SequenceCommand b a
-failSequence = throwE
+failSequence :: Monoid b => SequenceCommand b a
+failSequence = throwE mempty

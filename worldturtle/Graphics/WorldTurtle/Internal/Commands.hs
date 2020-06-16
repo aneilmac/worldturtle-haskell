@@ -57,7 +57,7 @@ instance Monad TurtleCommand where
 instance MonadFail TurtleCommand where
   fail t = TurtleCommand $ \ _ -> do
     addPicture $ text t
-    failSequence ()
+    failSequence
 
 {- | A `WorldCommand` represents an instruction that affects the entire 
      animation canvas.
@@ -91,7 +91,7 @@ instance Monad WorldCommand where
   (WorldCommand a) >>= f = WorldCommand $ a >>= \s -> seqW (f s)
 
 instance Alternative WorldCommand where
-  empty = WorldCommand $ failSequence ()
+  empty = WorldCommand failSequence
   (<|>) (WorldCommand a) (WorldCommand b) = WorldCommand $ alternateSequence a b
 
 instance Semigroup a => Semigroup (WorldCommand a) where
@@ -102,7 +102,7 @@ instance MonadPlus WorldCommand
 instance MonadFail WorldCommand where
   fail t = WorldCommand $ do
     addPicture $ text t
-    failSequence ()
+    failSequence
 
 -- | `run` takes a `TurtleCommand` and a `Turtle` to execute the command on. 
 --  The result of the computation is returned wrapped in a `WorldCommand`.

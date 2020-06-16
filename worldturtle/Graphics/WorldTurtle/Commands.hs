@@ -90,14 +90,13 @@ import Graphics.Gloss.Data.Picture
 Creates a new `Turtle` and displays it on the canvas. This turtle can then be
 manipulated! For example, to create a turtle and then move the turtle forward:
 
-   @
-    main:: IO ()
-    main = runWorld $ do
-      t <- makeTurtle
-      t >/> forward 90
-   @
+   
+  >  main:: IO ()
+  >  main = runWorld $ do
+  >    t <- makeTurtle
+  >    t >/> forward 90
 
-The default turtle starts at position (0, 0) and is orientated `north`.
+The default turtle starts at position @(0, 0)@ and is orientated `north`.
 
 -}
 makeTurtle :: WorldCommand Turtle
@@ -106,13 +105,12 @@ makeTurtle = WorldCommand generateTurtle
 {-| This variant of `makeTurtle` takes a starting position, a starting 
     orientation, and a color to apply to the turtle and the turtle's pen.
 
-    @
-      myCommand :: WorldCommand ()
-      myCommand = do
-        t1 <- makeTurtle' (0, 0)  0 green
-        t2 <- makeTurtle' (0, 0) 90 red
-        (t1 >/> forward 90) \<|\> (t2 >/> forward 90)
-    @
+    
+    >  myCommand :: WorldCommand ()
+    >  myCommand = do
+    >    t1 <- makeTurtle' (0, 0)  0 green
+    >    t2 <- makeTurtle' (0, 0) 90 red
+    >    (t1 >/> forward 90) \<|\> (t2 >/> forward 90)
 
     See `makeTurtle`.
 -}
@@ -287,7 +285,7 @@ position :: TurtleCommand P.Point -- ^ Returned current point.
 position = getter_ (0, 0) T.position
 
 -- | Warps the turtle to its starting position @(0, 0)@ and resets the
---   orientation to @North@ (90 degrees). No line is drawn moving the turtle.
+--   orientation to `north` (@90@ degrees). No line is drawn moving the turtle.
 home :: TurtleCommand ()
 home = TurtleCommand $ \ turtle -> do
   let ts = turtLens_ turtle
@@ -378,7 +376,7 @@ setVisible = setter_ T.visible
 
 -- | Returns the turtle's current speed.
 --   Speed is is @distance@ per second.
---   A speed of @0 is equivalent to no animation being performed and instant 
+--   A speed of @0@ is equivalent to no animation being performed and instant 
 --   movement.
 -- The default value is @200@.
 speed :: TurtleCommand Float -- ^ Speed of turtle.
@@ -412,16 +410,15 @@ representation = getter_ blank T.representation
    See `representation`.
    For example, to set the turtle as a red circle:
    
-   @
-    import Graphics.WorldTurtle
-    import qualified Graphics.Gloss.Data.Picture as G
-
-    myCommand :: TurtleCommand ()
-    myCommand = do
-      setPenColor red
-      setRepresentation (G.color red $ G.circleSolid 10)
-      forward 90
-   @
+   
+  > import Graphics.WorldTurtle
+  > import qualified Graphics.Gloss.Data.Picture as G
+  >
+  >  myCommand :: TurtleCommand ()
+  >  myCommand = do
+  >    setPenColor red
+  >    setRepresentation (G.color red $ G.circleSolid 10)
+  >    forward 90
 -}
 setRepresentation :: Picture -- ^ Picture to apply.
                   -> TurtleCommand ()
