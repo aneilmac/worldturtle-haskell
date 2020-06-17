@@ -41,7 +41,7 @@ newtype TurtleCommand a = TurtleCommand
   }
 
 instance Functor TurtleCommand where
-  fmap f (TurtleCommand a) = TurtleCommand $ \ t -> fmap f (a t)
+  fmap f (TurtleCommand a) = TurtleCommand $! \ t -> fmap f (a t)
 
 instance Applicative TurtleCommand where
   pure a = TurtleCommand $ \ _ -> pure a
@@ -49,7 +49,7 @@ instance Applicative TurtleCommand where
     TurtleCommand $ \ t -> liftA2 f (a t) (b t)
 
 instance Monad TurtleCommand where
-  (TurtleCommand a) >>= f = TurtleCommand $ \ t -> a t >>= \s -> seqT (f s) t
+  (TurtleCommand a) >>= f = TurtleCommand $! \ t -> a t >>= \s -> seqT (f s) t
 
 instance MonadFail TurtleCommand where
   fail t = TurtleCommand $ \ _ -> do
@@ -78,14 +78,14 @@ newtype WorldCommand a = WorldCommand
   }
 
 instance Functor WorldCommand where
-  fmap f (WorldCommand a) = WorldCommand $ fmap f a
+  fmap f (WorldCommand a) = WorldCommand $! fmap f a
 
 instance Applicative WorldCommand where
   pure a = WorldCommand $ pure a
   liftA2 f (WorldCommand a) (WorldCommand b) = WorldCommand $ liftA2 f a b
 
 instance Monad WorldCommand where
-  (WorldCommand a) >>= f = WorldCommand $ a >>= \s -> seqW (f s)
+  (WorldCommand a) >>= f = WorldCommand $! a >>= \s -> seqW (f s)
 
 instance Alternative WorldCommand where
   empty = WorldCommand empty

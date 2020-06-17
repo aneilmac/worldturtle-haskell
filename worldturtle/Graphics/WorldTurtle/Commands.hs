@@ -131,7 +131,7 @@ makeTurtle' p f c = WorldCommand $ do
 --   turtle is headed.
 backward :: Float -- ^ Distance to move the turtle.
          -> TurtleCommand ()
-backward !d = forward (-d)
+backward d = forward (-d)
 
 -- | Shorthand for `backward`.
 bk :: Float -> TurtleCommand ()
@@ -150,13 +150,13 @@ calculateNewPointF_ !p !d !h !q = P.lerp q p endP
 --   turtle is headed.
 forward :: Float -- ^ Distance to move the turtle.
         -> TurtleCommand ()
-forward !d = TurtleCommand $ \ turtle -> do
-    t <- tData_ turtle
+forward d = TurtleCommand $ \ turtle -> do
+    !t <- tData_ turtle
     --  Get origin point
     animate' d (t ^. T.speed) $ \ q -> do
       --  Get new endpoint via percentage
-      let !startP = t ^. T.position
-      let !midP = calculateNewPointF_ startP d (t ^. T.heading) q
+      let startP = t ^. T.position
+      let midP = calculateNewPointF_ startP d (t ^. T.heading) q
        -- don't draw if pen isn't in down state
       when (t ^. T.penDown) $ 
         addPicture $ color (t ^. T.penColor) 
@@ -195,12 +195,12 @@ lt = left
 rotateTo_ :: Bool -- ^ Bias decides in which direction rotation happens.
           -> Float -- ^ Amount to rotate by
           -> TurtleCommand ()
-rotateTo_  rightBias !r = TurtleCommand $ \ turtle -> do
-    t <- tData_ turtle
+rotateTo_  rightBias r = TurtleCommand $ \ turtle -> do
+    !t <- tData_ turtle
     let r' = P.normalizeHeading r
     animate' (P.degToRad r') (t ^. T.rotationSpeed) $ \q -> do
-      let !h = t ^. T.heading
-      let !newHeading = P.normalizeHeading $ if rightBias then h - q * r'
+      let h = t ^. T.heading
+      let newHeading = P.normalizeHeading $ if rightBias then h - q * r'
                                                           else h + q * r'
       --  Get new heading via percentage
       turtLens_ turtle . T.heading .= newHeading
@@ -226,7 +226,7 @@ drawCircle_ :: P.Point -- ^ Point on edge of circle to start from
             -> Float -- ^ Line thickness (penSize)
             -> Color -- ^ Color of circle 
             -> Picture -- ^ Resulting circle
-drawCircle_ !p !radius !startAngle !endAngle !pSize !pColor = 
+drawCircle_ p radius startAngle endAngle pSize pColor = 
  uncurry translate p $ rotate (180 - startAngle)
                      $ translate (-radius) 0
                      $ color pColor
@@ -254,29 +254,28 @@ calculateNewPointC_ !p !radius !startAngle !angle = (px, py)
 --   otherwise, it is drawn in a clockwise direction.
 arc  :: Float -- ^ Radius of the circle.
      -> Float -- ^ Angle to travel in degrees. 
-                 -- For example: @360@ for a full circle or @180@ for a 
-                 -- semicircle.
+              -- For example: @360@ for a full circle or @180@ for a 
+              -- semicircle.
      -> TurtleCommand ()
-arc !radius !r = TurtleCommand $ \turtle -> do
-  t <- tData_ turtle
-  let !r' = P.normalizeHeading r
+arc radius r = TurtleCommand $ \turtle -> do
+  !t <- tData_ turtle
+  let r' = P.normalizeHeading r
   animate' (abs radius * P.degToRad r') (t ^. T.speed) $ \ q -> do
-    let !startAngle = t ^. T.heading + 90
-    let !p = t ^. T.position
-    let !angle = r' * q
+    let startAngle = t ^. T.heading + 90
+    let p = t ^. T.position
+    let angle = r' * q
     -- don't draw if pen isn't in down state
     when (t ^. T.penDown) $ 
-      addPicture $! drawCircle_ p radius startAngle angle 
-                                (t ^. T.penSize) (t ^. T.penColor)
+      addPicture $ drawCircle_ p radius startAngle angle 
+                               (t ^. T.penSize) (t ^. T.penColor)
 
     -- Update the turtle with the new values.
     let ts = turtLens_ turtle
     ts . T.heading .= P.normalizeHeading (if radius >= 0
                                           then startAngle - 90 + angle
                                           else startAngle - 90 - angle)
-    
 
-    let !p' = calculateNewPointC_ p radius startAngle angle
+    let p' = calculateNewPointC_ p radius startAngle angle
     ts . T.position .= p'
 
 -- | Returns the turtle's current position.
@@ -300,7 +299,7 @@ home = TurtleCommand $ \ turtle -> do
 goto :: P.Point -- ^ Position to warp to.
      -> TurtleCommand ()
 goto point = TurtleCommand $ \ turtle -> do
-  t <- tData_ turtle
+  !t <- tData_ turtle
   let startP = t ^. T.position
   when (t ^. T.penDown) $ addPicture 
                         $ color (t ^. T.penColor) 
@@ -426,7 +425,7 @@ setRepresentation = setter_ T.representation
 
 -- | Clears all drawings form the canvas. Does not alter any turtle's state.
 clear :: WorldCommand ()
-clear = WorldCommand $ pics .= []
+clear = WorldCommand $ pics .= mempty
 
 -- | Sleep for a given amount of time in seconds. When sleeping no animation 
 --   runs. A negative value will be clamped to @0@.
@@ -437,7 +436,7 @@ sleep = WorldCommand . decrementSimTime . max 0
 --   what the state was before the command was run.
 branch :: TurtleCommand a -> TurtleCommand a
 branch (TurtleCommand p ) = TurtleCommand $ \ turtle -> do
-  t <- tData_ turtle
+  !t <- tData_ turtle
   output <- p turtle
   turtLens_ turtle .= t
   return output
@@ -463,7 +462,8 @@ south = 270
 -}
 
 -- | Looks up the turtle data for the given turtle in the state monad.
--- This type signature comes form GHC...my prism-foo is not good enough to sugar it.
+-- This type signature comes form GHC...my prism-foo is not good enough to sugar
+-- it.
 turtLens_ :: Applicative f 
           => Turtle 
           -> (T.TurtleData -> f T.TurtleData) 

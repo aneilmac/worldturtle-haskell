@@ -24,13 +24,13 @@ module Graphics.WorldTurtle.Internal.Sequence
 
 import Graphics.WorldTurtle.Internal.Turtle
 
-import Graphics.Gloss.Data.Picture (Picture, pictures)
+import Graphics.Gloss.Data.Picture (Picture)
 
 import Control.Applicative (empty)
 import Control.Monad (when)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Maybe
-import Control.Monad.Trans.State
+import Control.Monad.Trans.State.Strict
 
 import Control.Lens
 
@@ -57,7 +57,7 @@ newtype Turtle = Turtle Int deriving (Eq, Ord)
 data TSC = TSC
   { _pics :: ![Picture] -- ^ All pictures that make up the current canvas
   , _totalSimTime :: !Float -- ^ Remaining available for animating
-  , _turtles :: Map Turtle TurtleData  -- Collection of all turtles.
+  , _turtles :: !(Map Turtle TurtleData) -- Collection of all turtles.
   , _nextTurtleId :: !Int -- ^ ID of next turtle to be generated.
   }
 
@@ -66,7 +66,7 @@ $(makeLenses ''TSC)
 -- | Generates default parameter arguments.
 defaultTSC :: Float -> TSC
 defaultTSC givenTime = TSC 
-           { _pics = []
+           { _pics = mempty
            , _totalSimTime = givenTime
            , _turtles = Map.empty
            , _nextTurtleId = 0
@@ -118,7 +118,7 @@ renderTurtle :: SequenceCommand a
              -> Picture
 renderTurtle c f = let (_, s) = processTurtle c t
                        t  = defaultTSC f
-                    in pictures $ s ^. pics ++ drawTurtles (s ^. turtles)
+                    in mconcat $ (s ^. pics) ++ drawTurtles (s ^. turtles)
 
 drawTurtles :: Map Turtle TurtleData -> [Picture]
 drawTurtles m = drawTurtle <$> Map.elems m 
@@ -134,9 +134,9 @@ animate' :: Float
          -> Float 
          -> (Float -> SequenceCommand a) 
          -> SequenceCommand a
-animate' !distance !turtleSpeed callback =
-   let !duration = distance / turtleSpeed
-       !d' = if isNaN duration || isInfinite duration then 0 else duration
+animate' distance turtleSpeed callback =
+   let duration = distance / turtleSpeed
+       d' = if isNaN duration || isInfinite duration then 0 else duration
        --  if speed is 0 we use this as a "no animation" command from 
        --   user-space.
      in animate (abs d') callback
@@ -144,11 +144,11 @@ animate' !distance !turtleSpeed callback =
 animate :: Float 
         -> (Float -> SequenceCommand a) 
         -> SequenceCommand a
-animate !duration callback = do
+animate duration callback = do
    timeRemaining <- simTime -- simulation time to go
-   let !availableTime = min timeRemaining duration
+   let availableTime = min timeRemaining duration
    --  Amount of time we have to complete the animation before we need to exit.
-   let !timeQuot = if availableTime == 0 then 1 else availableTime / duration
+   let timeQuot = if availableTime == 0 then 1 else availableTime / duration
    --  quotient of available time vs required time. Note that when the duration
    --   is 0 we say "don't do any animation"
    t <- callback timeQuot 

@@ -16,11 +16,11 @@ parallelCircles =  do
   t1 <- makeTurtle
   t2 <- makeTurtle
   replicateM_ 10000 $ do
-    t1 >/> circle 90 <|> t2 >/> circle (-90)
+    t1 >/> forward 90 <|> t2 >/> backward (-90)
 
 main :: IO ()
 main = do
   [t] <- getArgs
   (_, b) <- return $! processTurtle (seqW parallelCircles) (defaultTSC $ read t)
-  mapM_ (putStrLn . show) (b ^. pics)
+  putStrLn . show $ b ^. pics
   return ()
