@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 module Main where
 
 import Control.Lens ((^.))
@@ -15,12 +14,12 @@ parallelCircles =  do
   -- Generate our turtles
   t1 <- makeTurtle
   t2 <- makeTurtle
-  replicateM_ 10000 $ do
+  replicateM_ 10000 $
     t1 >/> forward 90 <|> t2 >/> backward (-90)
 
 main :: IO ()
 main = do
   [t] <- getArgs
-  (_, b) <- return $! processTurtle (seqW parallelCircles) (defaultTSC $ read t)
-  putStrLn . show $ b ^. pics
+  let (_, b) = processTurtle (seqW parallelCircles) (defaultTSC $ read t)
+  print $ b ^. pics
   return ()

@@ -95,7 +95,7 @@ runWorld tc = G.play display white 30 defaultWorld iterateRender input timePass
   where display = InWindow "World Turtle" (800, 600) (400, 300)
         iterateRender w = G.applyViewPortToPicture 
                                (G.viewStateViewPort $ state w)
-                        $! renderTurtle (seqW tc) (elapsedTime w)
+                        $ renderTurtle (seqW tc) (elapsedTime w)
         input e w 
              -- Reset key resets sim state (including unpausing). We 
              -- deliberately keep view state the same.
@@ -131,7 +131,7 @@ infixl 4 >/>
 
 data World = World { elapsedTime :: !Float
                    , running :: !Bool
-                   , state :: !G.ViewState 
+                   , state :: G.ViewState 
                    }
 
 defaultWorld :: World

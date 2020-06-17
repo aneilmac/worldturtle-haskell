@@ -142,23 +142,23 @@ calculateNewPointF_ :: P.Point -- ^ Starting point
                     -> Float -- ^ Heading in degrees.
                     -> Float -- ^ coefficient [0, 1]
                     -> P.Point
-calculateNewPointF_ !p !d !h !q = P.lerp q p endP
-  where !vec = P.rotateV (P.degToRad h) (d, 0)
-        !endP = vec P.+ p
+calculateNewPointF_ !p !d !h !q = let !vec = P.rotateV (P.degToRad h) (d, 0)
+                                      !endP = vec P.+ p
+                                   in P.lerp q p endP
 
 -- | Move the turtle forward by the specified @distance@, in the direction the 
 --   turtle is headed.
 forward :: Float -- ^ Distance to move the turtle.
         -> TurtleCommand ()
-forward d = TurtleCommand $ \ turtle -> do
+forward !d = seqToT $ \ turtle -> do
     !t <- tData_ turtle
     --  Get origin point
     animate' d (t ^. T.speed) $ \ q -> do
       --  Get new endpoint via percentage
-      let startP = t ^. T.position
-      let midP = calculateNewPointF_ startP d (t ^. T.heading) q
+      let !startP = t ^. T.position
+      let !midP = calculateNewPointF_ startP d (t ^. T.heading) q
        -- don't draw if pen isn't in down state
-      when (t ^. T.penDown) $ 
+      when (t ^. T.penDown) $
         addPicture $ color (t ^. T.penColor) 
                    $ thickLine startP midP (t ^. T.penSize)
         --  Draw line from startPoint to midPoint.
@@ -172,7 +172,7 @@ fd = forward
 -- | Stamp a copy of the turtle shape onto the canvas at the current turtle 
 --   position.
 stamp :: TurtleCommand ()
-stamp = TurtleCommand $ tData_ >=> (addPicture . T.drawTurtle)
+stamp = seqToT $ tData_ >=> (addPicture . T.drawTurtle)
 
 -- | Turn a turtle right by the given degrees amount.
 right :: Float -- ^ Rotation amount to apply to turtle.
@@ -195,9 +195,9 @@ lt = left
 rotateTo_ :: Bool -- ^ Bias decides in which direction rotation happens.
           -> Float -- ^ Amount to rotate by
           -> TurtleCommand ()
-rotateTo_  rightBias r = TurtleCommand $ \ turtle -> do
+rotateTo_  !rightBias !r = seqToT $ \ turtle -> do
     !t <- tData_ turtle
-    let r' = P.normalizeHeading r
+    let !r' = P.normalizeHeading r
     animate' (P.degToRad r') (t ^. T.rotationSpeed) $ \q -> do
       let h = t ^. T.heading
       let newHeading = P.normalizeHeading $ if rightBias then h - q * r'
@@ -226,7 +226,7 @@ drawCircle_ :: P.Point -- ^ Point on edge of circle to start from
             -> Float -- ^ Line thickness (penSize)
             -> Color -- ^ Color of circle 
             -> Picture -- ^ Resulting circle
-drawCircle_ p radius startAngle endAngle pSize pColor = 
+drawCircle_ !p !radius !startAngle !endAngle !pSize !pColor = 
  uncurry translate p $ rotate (180 - startAngle)
                      $ translate (-radius) 0
                      $ color pColor
@@ -239,12 +239,13 @@ calculateNewPointC_ :: P.Point -- ^ Point on edge of circle
                     -> Float -- ^ Absolute starting angle in degrees
                     -> Float -- ^ Rotation amount about radius in degrees
                     -> P.Point -- ^ Resulting new point
-calculateNewPointC_ !p !radius !startAngle !angle = (px, py)
-  where !px = fst p - (radius * (cos a - cos s))
-        !py = snd p - (radius * (sin a - sin s))
-        !s = P.degToRad startAngle
-        !a = P.degToRad $ if radius >= 0 then startAngle + angle
-                                         else startAngle - angle
+calculateNewPointC_ !p !radius !startAngle !angle = 
+  let !px = fst p - (radius * (cos a - cos s))
+      !py = snd p - (radius * (sin a - sin s))
+      !s = P.degToRad startAngle
+      !a = P.degToRad $ if radius >= 0 then startAngle + angle
+                                       else startAngle - angle
+   in (px, py)
 
 -- | Draw an arc with a given @radius@. The center is @radius@ units left of the
 --   @turtle@ if positive. Otherwise  @radius@ units right of the @turtle@ if 
@@ -257,13 +258,13 @@ arc  :: Float -- ^ Radius of the circle.
               -- For example: @360@ for a full circle or @180@ for a 
               -- semicircle.
      -> TurtleCommand ()
-arc radius r = TurtleCommand $ \turtle -> do
+arc !radius !r = seqToT $ \turtle -> do
   !t <- tData_ turtle
-  let r' = P.normalizeHeading r
+  let !r' = P.normalizeHeading r
   animate' (abs radius * P.degToRad r') (t ^. T.speed) $ \ q -> do
-    let startAngle = t ^. T.heading + 90
-    let p = t ^. T.position
-    let angle = r' * q
+    let !startAngle = t ^. T.heading + 90
+    let !p = t ^. T.position
+    let !angle = r' * q
     -- don't draw if pen isn't in down state
     when (t ^. T.penDown) $ 
       addPicture $ drawCircle_ p radius startAngle angle 
@@ -275,7 +276,7 @@ arc radius r = TurtleCommand $ \turtle -> do
                                           then startAngle - 90 + angle
                                           else startAngle - 90 - angle)
 
-    let p' = calculateNewPointC_ p radius startAngle angle
+    let !p' = calculateNewPointC_ p radius startAngle angle
     ts . T.position .= p'
 
 -- | Returns the turtle's current position.
@@ -286,7 +287,7 @@ position = getter_ (0, 0) T.position
 -- | Warps the turtle to its starting position @(0, 0)@ and resets the
 --   orientation to `north` (@90@ degrees). No line is drawn moving the turtle.
 home :: TurtleCommand ()
-home = TurtleCommand $ \ turtle -> do
+home = seqToT $ \ turtle -> do
   let ts = turtLens_ turtle
   ts . T.position       .= (0, 0)
   ts . T.heading        .= 90
@@ -298,9 +299,9 @@ home = TurtleCommand $ \ turtle -> do
 --   This does not affect the turtle's heading.
 goto :: P.Point -- ^ Position to warp to.
      -> TurtleCommand ()
-goto point = TurtleCommand $ \ turtle -> do
+goto point = seqToT $ \ turtle -> do
   !t <- tData_ turtle
-  let startP = t ^. T.position
+  let !startP = t ^. T.position
   when (t ^. T.penDown) $ addPicture 
                         $ color (t ^. T.penColor) 
                         $ thickLine startP point (t ^. T.penSize)
@@ -435,9 +436,9 @@ sleep = WorldCommand . decrementSimTime . max 0
 -- | Given a command, runs the command, then resets the turtle's state back to
 --   what the state was before the command was run.
 branch :: TurtleCommand a -> TurtleCommand a
-branch (TurtleCommand p ) = TurtleCommand $ \ turtle -> do
+branch (TurtleCommand p ) = seqToT $ \ turtle -> do
   !t <- tData_ turtle
-  output <- p turtle
+  output <- seqW $ p turtle
   turtLens_ turtle .= t
   return output
 
@@ -475,18 +476,16 @@ turtLens_ t = turtles . ix t
 -- | This is a helper function for our getter commands.
 --   It takes a default value, the lense to compose, and the turtle to inspect.
 getter_ :: a -> Lens' T.TurtleData a -> TurtleCommand a
-getter_ def l = 
-  TurtleCommand $ \ t -> fromMaybe def <$> preuse (turtLens_ t . l)
+getter_ def l = seqToT $ \ t -> fromMaybe def <$> preuse (turtLens_ t . l)
 {-# INLINE getter_ #-}
 
 -- | This is a helper function that extracts the turtle data for a given turtle.
 tData_ :: Turtle -> SequenceCommand T.TurtleData
-tData_ = seqT $ getter_ T.defaultTurtle id
+tData_ t = seqW $ seqT (getter_ T.defaultTurtle id) t
 {-# INLINE tData_ #-}
 
 -- | This is a helper function for our setter commands
 -- It takes a lens, the value to apply, and the turtle to modify.
 setter_ :: Lens' T.TurtleData b -> b -> TurtleCommand ()
-setter_ l val = 
-  TurtleCommand $ \ t -> turtLens_ t . l .= val
+setter_ l val = seqToT $ \ t -> turtLens_ t . l .= val
 {-# INLINE setter_ #-}

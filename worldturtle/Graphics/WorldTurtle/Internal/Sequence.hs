@@ -98,7 +98,7 @@ decrementSimTime duration = simTime >>= \ t -> setSimTime (t - duration)
 -- | Given a picture, adds it to the picture list.
 addPicture :: Picture -- ^ Picture to add to our animation
            -> SequenceCommand ()
-addPicture p = pics %= (p :)
+addPicture p = pics %= ($!) (p :)
 
 -- | Given a sequence and a State, returns the result of the computation and the
 --   final state of the computation of form @(r, s)@. When @r@ is @Just@, then 

@@ -3,6 +3,7 @@ module Graphics.WorldTurtle.Internal.Commands
   ( TurtleCommand (..)
   , WorldCommand (..)
   , run
+  , seqToT
   ) where
 
 import Control.Applicative
@@ -11,50 +12,6 @@ import Control.Monad
 import Graphics.Gloss.Data.Picture (text)
 
 import Graphics.WorldTurtle.Internal.Sequence
-
-{-| A `TurtleCommand` represents an instruction to execute on a turtle.
-    It could be as simple as "draw a line" or more complicated like 
-    "draw 300 circles."
-
-    `TurtleCommand`s can be executed in order by combining them using
-    the monadic operator `(>>)`.
-
-    For example, to draw an equilateral triangle 
-    using [do notation](https://en.wikibooks.org/wiki/Haskell/do_notation):
-
-    > drawTriangle :: TurtleCommand ()
-    > drawTriangle = do
-    >   setHeading east
-    >   forward 100
-    >   left 120
-    >   forward 100
-    >   left 120
-    >   forward 100
-
-    Which would produce:
-
-    ![draw triangle gif](docs/images/drawtriangle.gif)
--}
-newtype TurtleCommand a = TurtleCommand 
-  { 
-    seqT :: Turtle -> SequenceCommand a
-  }
-
-instance Functor TurtleCommand where
-  fmap f (TurtleCommand a) = TurtleCommand $! \ t -> fmap f (a t)
-
-instance Applicative TurtleCommand where
-  pure a = TurtleCommand $ \ _ -> pure a
-  liftA2 f (TurtleCommand a) (TurtleCommand b) = 
-    TurtleCommand $ \ t -> liftA2 f (a t) (b t)
-
-instance Monad TurtleCommand where
-  (TurtleCommand a) >>= f = TurtleCommand $! \ t -> a t >>= \s -> seqT (f s) t
-
-instance MonadFail TurtleCommand where
-  fail t = TurtleCommand $ \ _ -> do
-    addPicture $ text t
-    fail t
 
 {- | A `WorldCommand` represents an instruction that affects the entire 
      animation canvas.
@@ -85,21 +42,64 @@ instance Applicative WorldCommand where
   liftA2 f (WorldCommand a) (WorldCommand b) = WorldCommand $ liftA2 f a b
 
 instance Monad WorldCommand where
-  (WorldCommand a) >>= f = WorldCommand $! a >>= \s -> seqW (f s)
+  (WorldCommand a) >>= f = WorldCommand $! a >>= \s -> seqW $! f s
 
 instance Alternative WorldCommand where
   empty = WorldCommand empty
-  (<|>) (WorldCommand a) (WorldCommand b) = WorldCommand $ alternateSequence a b
+  (<|>) (WorldCommand a) (WorldCommand b) = 
+    WorldCommand $! alternateSequence a b
 
 instance Semigroup a => Semigroup (WorldCommand a) where
-  (WorldCommand a) <> (WorldCommand b) = WorldCommand $ combineSequence a b
+  (WorldCommand a) <> (WorldCommand b) = 
+    WorldCommand $! combineSequence a b
 
 instance MonadPlus WorldCommand
 
 instance MonadFail WorldCommand where
-  fail t = WorldCommand $ do
-    addPicture $ text t
-    fail t
+  fail t = WorldCommand $! addPicture (text t) >> fail t
+
+
+{-| A `TurtleCommand` represents an instruction to execute on a turtle.
+    It could be as simple as "draw a line" or more complicated like 
+    "draw 300 circles."
+
+    `TurtleCommand`s can be executed in order by combining them using
+    the monadic operator `(>>)`.
+
+    For example, to draw an equilateral triangle 
+    using [do notation](https://en.wikibooks.org/wiki/Haskell/do_notation):
+
+    > drawTriangle :: TurtleCommand ()
+    > drawTriangle = do
+    >   setHeading east
+    >   forward 100
+    >   left 120
+    >   forward 100
+    >   left 120
+    >   forward 100
+
+    Which would produce:
+
+    ![draw triangle gif](docs/images/drawtriangle.gif)
+-}
+newtype TurtleCommand a = TurtleCommand 
+  { 
+    seqT :: Turtle -> WorldCommand a
+  }
+
+instance Functor TurtleCommand where
+  fmap f (TurtleCommand a) = TurtleCommand $ \ t -> fmap f (a t)
+
+instance Applicative TurtleCommand where
+  pure a = TurtleCommand $ \ _ -> pure a
+  liftA2 f (TurtleCommand a) (TurtleCommand b) = 
+    TurtleCommand $ \ t -> liftA2 f (a t) (b t)
+
+instance Monad TurtleCommand where
+  (TurtleCommand a) >>= f = TurtleCommand $ \ t -> a t >>= \s -> seqT (f s) t
+
+instance MonadFail TurtleCommand where
+  fail t = TurtleCommand $ \ _ -> fail t
 
 -- | `run` takes a `TurtleCommand` and a `Turtle` to execute the command on. 
 --  The result of the computation is returned wrapped in a `WorldCommand`.
@@ -119,4 +119,7 @@ instance MonadFail WorldCommand where
 run :: TurtleCommand a -- ^ Command to execute
     -> Turtle -- ^ Turtle to apply the command upon.
     -> WorldCommand a -- ^ Result as a `WorldCommand`
-run c = WorldCommand . seqT c
+run = seqT
+
+seqToT :: (Turtle -> SequenceCommand a) -> TurtleCommand a
+seqToT f = TurtleCommand $ \ t -> WorldCommand $! f t

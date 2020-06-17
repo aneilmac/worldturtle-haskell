@@ -22,7 +22,10 @@ lerp :: Float -- Coefficient between 0 and 1.
      -> Point -- Point /a/.
      -> Point -- Point /b/.
      -> Point -- new point some percentage value between /a/ and /b/.
-lerp l a b = ((1 P.- l) `mulSV` a) + (l `mulSV` b) 
+lerp !l !a !b = let (!ux, !uy) = (1 P.- l) `mulSV` a
+                    (!vx, !vy) = l `mulSV` b
+                    !n = (ux P.+ vx, uy P.+ vy)
+               in n
 
 -- | Return a valid heading value between (0, 360].
 --   We want 360 to be 360 (full rotation).
