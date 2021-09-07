@@ -77,10 +77,6 @@ You can interact with the animation window in the following ways:
 
 For all examples, look [here](worldturtle-examples)!
 
-<details>
-  
-<summary>Here's some of my favorites!</summary>
-
 ### [spiralstar](worldturtle-examples/spiralstar/Main.hs) example
 
 ![sprialstar animation](worldturtle-examples/spiralstar/output.gif)
@@ -92,8 +88,6 @@ For all examples, look [here](worldturtle-examples)!
 ### [lsystem](worldturtle-examples/lsystem/Main.hs) example
 
 ![lsystem animation](worldturtle-examples/lsystem/output.gif)
-
-</details>
 
 ## Building a project
 
