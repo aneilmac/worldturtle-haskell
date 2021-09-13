@@ -1,4 +1,4 @@
-cabal-version: 2.0
+cabal-version: 3.0
 
 name:           worldturtle
 version:        0.2.2.0
@@ -9,10 +9,10 @@ bug-reports:    https://github.com/aneilmac/worldturtle-haskell/issues
 author:         Archibald Neil MacDonald
 maintainer:     archibaldnmac@gmail.com
 copyright:      2020 Archibald Neil MacDonald
-license:        BSD3
+license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
-tested-with: GHC ==8.8.3 || ==8.10.3
+tested-with: GHC ==8.10.3
 
 description: 
   Have you ever heard of [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics)?
@@ -22,7 +22,7 @@ description:
   Turtle graphics are a fantastic introduction to the world of
     programming and to the syntax of a new programming language.
   .
-  ![parallelcircles gif](https://hackage.haskell.org/package/worldturtle-0.2.0.0/docs/docs/images/parallel_circles_animated_300.gif)
+  ![parallelcircles gif](https://hackage.haskell.org/package/worldturtle-0.2.2.0/docs/docs/images/parallel_circles_animated_300.gif)
   .
   This module is a framework built on top 
   of [gloss](https://hackage.haskell.org/package/gloss) to render turtles
@@ -30,6 +30,15 @@ description:
   teaching tool to beginners - but also, it's cool to draw things!
   .
   See The API ref, "Graphics.WorldTurtle", for features!
+  .
+  To kick-off a new project try creating a new project with stack:
+  .
+  ```bash
+  stack new my-worldturtle-project aneilmac/worldturtle
+  cd my-worldturtle-project
+  stack build
+  stack exec my-worldturtle-project
+  ```
 
 extra-doc-files: docs/images/*.gif
 extra-source-files: ChangeLog.md

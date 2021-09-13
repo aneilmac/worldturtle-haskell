@@ -1,4 +1,4 @@
-cabal-version: 2.0
+cabal-version: 3.0
 
 name:           worldturtle-tests
 version:        0.2.2.0
@@ -9,7 +9,7 @@ bug-reports:    https://github.com/aneilmac/worldturtle-haskell/issues
 author:         Archibald Neil MacDonald
 maintainer:     archibaldnmac@gmail.com
 copyright:      2020 Archibald Neil MacDonald
-license:        BSD3
+license:        BSD-3-Clause
 build-type:     Simple
 
 source-repository head
