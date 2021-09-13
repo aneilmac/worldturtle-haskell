@@ -1,13 +1,13 @@
 cabal-version: 2.0
 
 name:           worldturtle-examples
-version:        0.2.0.0
+version:        0.2.2.0
 description:    Examples using the worldturtle library
 category:       teaching
-homepage:       https://github.com/FortOyer/worldturtle-haskell#readme
-bug-reports:    https://github.com/FortOyer/worldturtle-haskell/issues
+homepage:       https://github.com/aneilmac/worldturtle-haskell#readme
+bug-reports:    https://github.com/aneilmac/worldturtle-haskell/issues
 author:         Archibald Neil MacDonald
-maintainer:     FortOyer@hotmail.co.uk
+maintainer:     archibaldnmac@gmail.com
 copyright:      2020 Archibald Neil MacDonald
 license:        BSD3
 license-file:   LICENSE
@@ -15,7 +15,7 @@ build-type:     Simple
 
 source-repository head
   type: git
-  location: https://github.com/FortOyer/worldturtle-haskell
+  location: https://github.com/aneilmac/worldturtle-haskell
 
 executable star-exe
   main-is: Main.hs
