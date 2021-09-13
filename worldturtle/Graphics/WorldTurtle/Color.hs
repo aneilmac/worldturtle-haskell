@@ -3,7 +3,7 @@ Module      : Graphics.WorldTurtle.Color
 Description : Color functions
 Copyright   : (c) Archibald Neil MacDonald, 2020
 License     : BSD3
-Maintainer  : FortOyer@hotmail.co.uk
+Maintainer  : archibaldnmac@gmail.com
 Stability   : experimental
 Portability : POSIX
 

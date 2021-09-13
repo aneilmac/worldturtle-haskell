@@ -118,7 +118,7 @@ renderTurtle :: SequenceCommand a
              -> Picture
 renderTurtle c f = let (_, s) = processTurtle c t
                        t  = defaultTSC f
-                    in mconcat $ (s ^. pics) ++ drawTurtles (s ^. turtles)
+                    in mconcat $ reverse (s ^. pics) ++ drawTurtles (s ^. turtles)
 
 drawTurtles :: Map Turtle TurtleData -> [Picture]
 drawTurtles m = drawTurtle <$> Map.elems m 

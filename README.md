@@ -118,7 +118,7 @@ template.
 To create and run your own project, use the following commands to get setup:
 
 ```sh
-stack new my-new-project FortOyer/worldturtle
+stack new my-new-project aneilmac/worldturtle
 cd my-new-project
 stack build
 stack exec my-new-project

@@ -5,7 +5,7 @@ Module      : Graphics.WorldTurtle.Commands
 Description : The commands used 
 Copyright   : (c) Archibald Neil MacDonald, 2020
 License     : BSD3
-Maintainer  : FortOyer@hotmail.co.uk
+Maintainer  : archibaldnmac@gmail.com
 Stability   : experimental
 Portability : POSIX
 

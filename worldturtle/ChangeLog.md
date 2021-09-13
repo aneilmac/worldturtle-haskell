@@ -1,5 +1,15 @@
 # Changelog for turtle-haskell
 
+## v0.2.2
+
+* Upgrading to GHC 8.10.3 to resolve problems GHC compiler problems with Mac 
+OSX. See [here](https://gitlab.haskell.org/ghc/ghc/-/issues/18446) for details.
+* Fixed issue where newly drawn lines were drawn under older lines.
+
+## v0.2.1
+
+* Internally simplified the commands system to use a Maybe Monad for sequencing.
+
 ## v0.2.0
 
 * Split `TurtleCommand` into `TurtleCommand` and `WorldCommand` to help reduce

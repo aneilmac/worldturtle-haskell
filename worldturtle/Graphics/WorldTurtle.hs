@@ -3,7 +3,7 @@
     Description : WorldTurtle
     Copyright   : (c) Archibald Neil MacDonald, 2020
     License     : BSD3
-    Maintainer  : FortOyer@hotmail.co.uk
+    Maintainer  : archibaldnmac@gmail.com
     Stability   : experimental
     Portability : POSIX
   
@@ -11,7 +11,7 @@
     in Haskell.
   
     Take a look at the
-         [examples](https://github.com/FortOyer/worldturtle-haskell#examples) on
+         [examples](https://github.com/aneilmac/worldturtle-haskell#examples) on
     Github!
 -}
 module Graphics.WorldTurtle
