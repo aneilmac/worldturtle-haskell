@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:           worldturtle
-version:        0.2.2.0
+version:        0.2.2.1
 synopsis:       LOGO-like Turtle graphics with a monadic interface.
 category:       teaching
 homepage:       https://github.com/aneilmac/worldturtle-haskell#readme
@@ -12,7 +12,7 @@ copyright:      2020 Archibald Neil MacDonald
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
-tested-with: GHC ==8.10.3
+tested-with: GHC == 8.10.3, GHC == 9.0.1
 
 description: 
   Have you ever heard of [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics)?
@@ -22,7 +22,7 @@ description:
   Turtle graphics are a fantastic introduction to the world of
     programming and to the syntax of a new programming language.
 
-  ![parallelcircles gif](https://hackage.haskell.org/package/worldturtle-0.2.2.0/docs/docs/images/parallel_circles_animated_300.gif)
+  ![parallelcircles gif](https://hackage.haskell.org/package/worldturtle-0.2.0.0/docs/docs/images/parallel_circles_animated_300.gif)
 
   This module is a framework built on top 
   of [gloss](https://hackage.haskell.org/package/gloss) to render turtles
@@ -59,8 +59,8 @@ library
       base >=4.13 && <5
     , containers >=0.6.2 && < 0.7
     , gloss >=1.13.1 && < 1.14
-    , lens >=4.18.1 && < 4.20
-    , matrix >= 0.3.6 && < 0.4
+    , lens >=4.18.1 && < 5.1
+    , matrix >=0.3.6 && < 0.4
     , transformers >=0.5 && < 0.6
   default-language: Haskell2010
   ghc-options: 
