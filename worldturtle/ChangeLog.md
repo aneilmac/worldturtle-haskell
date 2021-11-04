@@ -1,5 +1,11 @@
 # Changelog for turtle-haskell
 
+## v0.2.2.1
+
+* Upgrading upper bounds of the lens package to allow for compilation with GHC
+  9.0.1.
+* Regenerated `.travis.yml` to reflect new GHC supported version.
+
 ## v0.2.2
 
 * Upgrading to GHC 8.10.3 to resolve problems GHC compiler problems with Mac 

@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:           worldturtle-tests
-version:        0.2.2.0
+version:        0.2.2.1
 description:    Tests using the worldturtle library
 category:       teaching
 homepage:       https://github.com/aneilmac/worldturtle-haskell#readme
