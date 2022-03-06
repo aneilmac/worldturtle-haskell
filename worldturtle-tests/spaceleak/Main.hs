@@ -20,6 +20,6 @@ parallelCircles =  do
 main :: IO ()
 main = do
   [t] <- getArgs
-  let (_, b) = processTurtle (seqW parallelCircles) (defaultTSC $ read t)
+  (_, b) <- processTurtle (seqW parallelCircles) (defaultTSC $ read t)
   print $ b ^. pics
   return ()

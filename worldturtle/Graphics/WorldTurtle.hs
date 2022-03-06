@@ -20,10 +20,12 @@ module Graphics.WorldTurtle
      -- * Running on a single turtle.
      -- $running
        runTurtle
+     , runTurtle'
      , TurtleCommand
      -- * Running a world of turtles.
      -- $multiturtle
      , runWorld
+     , runWorld'
      , WorldCommand
      , run 
      , (>/>)
@@ -44,14 +46,16 @@ import Control.Applicative (empty, (<|>))
 import Graphics.Gloss.Data.Display (Display (..))
 import qualified Graphics.Gloss.Data.ViewState as G
 import qualified Graphics.Gloss.Data.ViewPort as G
-import qualified Graphics.Gloss.Interface.Pure.Game as G
+import qualified Graphics.Gloss.Interface.IO.Game as G
 
 import Graphics.WorldTurtle.Color
 import Graphics.WorldTurtle.Commands
 import Graphics.WorldTurtle.Internal.Sequence (renderTurtle)
 import Graphics.WorldTurtle.Internal.Commands ( TurtleCommand
-                                              , WorldCommand (..), seqW
-                                              , run)
+                                              , WorldCommand (..)
+                                              , seqW
+                                              , run
+                                              )
 import Graphics.WorldTurtle.Shapes
 
 -- | Takes a `TurtleCommand` and executes the command on an implicitly created
@@ -64,7 +68,12 @@ import Graphics.WorldTurtle.Shapes
 -- See also: `Graphics.WorldTurtle.Commands.makeTurtle`.
 runTurtle :: TurtleCommand () -- ^ Command sequence to execute.
           -> IO ()
-runTurtle c = runWorld $ makeTurtle >>= run c
+runTurtle = runTurtle' white
+
+runTurtle' :: Color
+          -> TurtleCommand () -- ^ Command sequence to execute.
+          -> IO ()
+runTurtle' bckCol c = runWorld' bckCol $ makeTurtle >>= run c
 
 {- | `runWorld` takes a `WorldCommand` and produces the animation in a new
       window! 
@@ -91,23 +100,29 @@ runTurtle c = runWorld $ makeTurtle >>= run c
 -}
 runWorld :: WorldCommand () -- ^ Command sequence to execute
           -> IO ()
-runWorld tc = G.play display white 30 defaultWorld iterateRender input timePass
+runWorld = runWorld' white
+
+-- Variant of `runWorld` which takes an additional background color parameter. 
+runWorld' :: Color -- ^ Background color
+          -> WorldCommand () -- ^ Command sequence to execute
+          -> IO ()
+runWorld' bckCol tc = G.playIO display bckCol 30 defaultWorld iterateRender input timePass
   where display = InWindow "World Turtle" (800, 600) (400, 300)
-        iterateRender w = G.applyViewPortToPicture 
-                               (G.viewStateViewPort $ state w)
-                        $ renderTurtle (seqW tc) (elapsedTime w)
+        iterateRender w = do
+           p <- renderTurtle (seqW tc) (elapsedTime w)
+           return $ G.applyViewPortToPicture (G.viewStateViewPort $ viewState w) p
         input e w 
              -- Reset key resets sim state (including unpausing). We 
              -- deliberately keep view state the same.
-             | isResetKey_ e = w { elapsedTime = 0, running = True }
+             | isResetKey_ e = return w { elapsedTime = 0, running = True }
              -- Pause prevents any proceeding.
-             | isPauseKey_ e = w { running = not $ running w }
+             | isPauseKey_ e = return w { running = not $ running w }
              -- Let Gloss consume the command.
-             | otherwise = w { state = G.updateViewStateWithEvent e $ state w } 
+             | otherwise = return w { viewState = G.updateViewStateWithEvent e $ viewState w } 
         -- Increment simulation time if we are not paused.
         timePass f w
-         | running w = w { elapsedTime = f + elapsedTime w }
-         | otherwise = w
+         | running w = return w { elapsedTime = f + elapsedTime w }
+         | otherwise = return w
 
 -- | This is an infix version of `run` where the arguments are swapped.
 --
@@ -131,7 +146,7 @@ infixl 4 >/>
 
 data World = World { elapsedTime :: !Float
                    , running :: !Bool
-                   , state :: G.ViewState 
+                   , viewState :: G.ViewState 
                    }
 
 defaultWorld :: World
@@ -159,11 +174,10 @@ isPauseKey_ _ = False
   To start animating a single turtle, you just pass your commands to
   `runTurtle` like so:
 
-  >    import Control.Monad (replicateM_)
   >    import Graphics.WorldTurtle
   >
   >    drawSquare :: Float -> TurtleCommand ()
-  >    drawSquare size = replicateM_ 4 $ forward size >> right 90
+  >    drawSquare size = repeatFor 4 $ forward size >> right 90
   >
   >    main :: IO ()
   >    main = runTurtle $ drawSquare 100

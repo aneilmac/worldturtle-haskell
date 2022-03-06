@@ -37,15 +37,20 @@ module Graphics.WorldTurtle.Commands
   , rt
   , Graphics.WorldTurtle.Commands.circle
   , Graphics.WorldTurtle.Commands.arc
+  , jump
   , goto
   , setPosition
   , home
   , setHeading
   , setSpeed
   , setRotationSpeed
+  , wait
+  , repeatFor
   -- * Styling commands.
   , stamp
   , representation
+  , label
+  , label'
   -- ** Query turtle's state.
   , position
   , heading
@@ -174,6 +179,30 @@ fd = forward
 stamp :: TurtleCommand ()
 stamp = seqToT $ tData_ >=> (addPicture . T.drawTurtle)
 
+-- | Writes a string to screen at the turtle's position.
+-- 
+--  The written text color will match turtle pen color.
+--
+-- This is eqivelent to:
+-- > label = label' 0.2
+label :: String -- ^ String to write to screen.
+      -> TurtleCommand ()
+label = label' 0.2
+
+-- | Variant of `label` which takes a scale argument to scale the 
+--   size of the drawn text.
+label' :: Float -- ^ Scale of text to draw.
+       -> String -- ^ String to write to screen. 
+       -> TurtleCommand ()
+label' s txt = seqToT $ \ turtle -> do
+  !t <- tData_ turtle
+  let (x, y) = t ^. T.position
+  addPicture $ translate x y
+             $ scale s s
+             $ color (t ^. T.penColor) 
+             $ text txt
+
+
 -- | Turn a turtle right by the given degrees amount.
 right :: Float -- ^ Rotation amount to apply to turtle.
       -> TurtleCommand ()
@@ -293,9 +322,23 @@ home = seqToT $ \ turtle -> do
   ts . T.heading        .= 90
 
 -- | Warps the turtle to a new position.
+--   The turtle jumps to this new position with no animation. No line
+--   is drawn when calling this command.
+--
+--   Use `goto` if you want a line to be drawn.
+--
+--   This does not affect the turtle's heading.
+jump :: P.Point -- ^ Position to warp to.
+     -> TurtleCommand ()
+jump point = seqToT $ \ turtle -> do
+  turtLens_ turtle . T.position .= point
+
+-- | Warps the turtle to a new position.
 --   The turtle jumps to this new position with no animation. If the pen is down
 --   then a line is drawn.
 --   
+--   Use `jump` if you do not want a line to be drawn.
+--
 --   This does not affect the turtle's heading.
 goto :: P.Point -- ^ Position to warp to.
      -> TurtleCommand ()
@@ -307,7 +350,8 @@ goto point = seqToT $ \ turtle -> do
                         $ thickLine startP point (t ^. T.penSize)
   turtLens_ turtle . T.position .= point
 
--- | Alias of `goto`.
+{-# DEPRECATED setPosition "Use `goto` instead." #-}
+-- | Deprecated. Alias of `goto`.
 setPosition :: P.Point -> TurtleCommand ()
 setPosition = goto
 
@@ -428,10 +472,37 @@ setRepresentation = setter_ T.representation
 clear :: WorldCommand ()
 clear = WorldCommand $ pics .= mempty
 
--- | Sleep for a given amount of time in seconds. When sleeping no animation 
---   runs. A negative value will be clamped to @0@.
-sleep :: Float -> WorldCommand ()
+-- | Sleeps for a given amount of time in seconds. When sleeping no animation 
+--   runs. 
+--
+--   This is the `WorldComamnd` variant of `wait`.
+--
+--   A negative value will be clamped to @0@.
+sleep :: Float  -- ^ Amount of time to sleep in seconds.
+      -> WorldCommand ()
 sleep = WorldCommand . decrementSimTime . max 0
+
+-- | Turtle waits for a given amount of time in seconds. When sleeping turtle does not move. 
+-- 
+--   This is the `TurtleCommand` variant of `sleep`.
+--
+--   A negative value will be clamped to @0@.
+wait :: Float -- ^ Amount of time to wait in seconds.
+     -> TurtleCommand ()
+wait f = seqToT $ \ _ -> decrementSimTime $ max 0 f
+
+-- | Repeats the same command several times.
+--
+-- Example:
+--   > repeatFor 4 $ do 
+--   >     forward 50
+--   >     right 90
+--
+-- This is less generic alias of `replicateM_`.
+repeatFor :: Int -- ^ Number of times to repeat a command.
+       -> TurtleCommand a -- ^ Command to repeat.
+       -> TurtleCommand ()
+repeatFor = replicateM_
 
 -- | Given a command, runs the command, then resets the turtle's state back to
 --   what the state was before the command was run.

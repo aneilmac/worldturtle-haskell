@@ -1,7 +1,6 @@
 module Main where
 
-import Control.Monad (replicateM_)
-
+import Control.Monad
 import Graphics.WorldTurtle
 
 main :: IO ()

@@ -8,7 +8,7 @@ module Graphics.WorldTurtle.Internal.Commands
 
 import Control.Applicative
 import Control.Monad
-
+import Control.Monad.IO.Class
 import Graphics.Gloss.Data.Picture (text)
 
 import Graphics.WorldTurtle.Internal.Sequence
@@ -55,6 +55,9 @@ instance Semigroup a => Semigroup (WorldCommand a) where
 
 instance MonadPlus WorldCommand
 
+instance MonadIO WorldCommand where
+  liftIO a = WorldCommand $ liftIO a
+
 instance MonadFail WorldCommand where
   fail t = WorldCommand $! addPicture (text t) >> fail t
 
@@ -100,6 +103,9 @@ instance Monad TurtleCommand where
 
 instance MonadFail TurtleCommand where
   fail t = TurtleCommand $ \ _ -> fail t
+
+instance MonadIO TurtleCommand where
+  liftIO a = TurtleCommand $ \ _ -> liftIO a
 
 -- | `run` takes a `TurtleCommand` and a `Turtle` to execute the command on. 
 --  The result of the computation is returned wrapped in a `WorldCommand`.

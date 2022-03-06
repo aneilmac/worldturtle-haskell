@@ -18,12 +18,11 @@ Turtle commands are monads!
 The following snippet produces a square:
 
 ```haskell
-import Control.Monad (replicateM_)
 import Graphics.WorldTurtle
 
 main :: IO ()
 main = runTurtle $
-  replicateM_ 4 $ do
+  repeatFor 4 $ do
     forward 90
     right 90
 ```

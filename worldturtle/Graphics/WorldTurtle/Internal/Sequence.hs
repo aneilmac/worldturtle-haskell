@@ -33,12 +33,14 @@ import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.State.Strict
 
 import Control.Lens
+    ( (&), (^.), use, (%=), (%~), (+=), (.=), (.~), makeLenses )
+import Control.Monad.IO.Class (liftIO)
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 
 -- | State Monad that takes our `TSC` type as its state object.
-type TurtleState = State TSC
+type TurtleState = StateT TSC IO
 
 -- | Maybe Monad on top of the State Monad of form @SequenceCommand a@.
 --   This represents a computation that can be "partial." I.E. we can only 
@@ -106,19 +108,20 @@ addPicture p = pics %= ($!) (p :)
 --   lack of time available (i.e. a partial animation).
 processTurtle :: SequenceCommand a 
               -> TSC
-              -> (Maybe a, TSC)
+              -> IO (Maybe a, TSC)
 processTurtle commands tsc = 
   let drawS = runMaybeT $ decrementSimTime 0 >> commands
-   in runState drawS tsc
+   in runStateT drawS tsc
 
 -- | Given a computation to run and an amount of time to run it in, renders the
 --   final "picture".
 renderTurtle :: SequenceCommand a 
              -> Float 
-             -> Picture
-renderTurtle c f = let (_, s) = processTurtle c t
-                       t  = defaultTSC f
-                    in mconcat $ reverse (s ^. pics) ++ drawTurtles (s ^. turtles)
+             -> IO Picture
+renderTurtle c f = do
+  let t  = defaultTSC f
+  (_, s) <- processTurtle c t
+  return $ mconcat $ reverse (s ^. pics) ++ drawTurtles (s ^. turtles)
 
 drawTurtles :: Map Turtle TurtleData -> [Picture]
 drawTurtles m = drawTurtle <$> Map.elems m 
@@ -198,16 +201,16 @@ runParallel a b = do
 
   s <- lift get
   -- Run the "A" animation
-  let (aVal, s') = processTurtle a s
-  let aSimTime = s' ^. totalSimTime
-
-  -- Run the "B" animation from the same time
-  let (bVal, s'') = processTurtle b $ s' & totalSimTime .~ startSimTime
-  -- No subsequent animation can proceed until the longest animation completes.
-  -- We take the remaining animation time to be the remaining time of the 
-  -- longest running animation
+  (aVal, bVal, aSimTime, s'') <- liftIO $ processTurtle a s >>= \(aVal, s') -> do
+    let aSimTime = s' ^. totalSimTime
+    -- Run the "B" animation from the same time
+    (bVal, s'') <- processTurtle b $ s' & totalSimTime .~ startSimTime
+    return (aVal, bVal, aSimTime, s'')
+    -- No subsequent animation can proceed until the longest animation completes.
+    -- We take the remaining animation time to be the remaining time of the 
+    -- longest running animation
   lift $ put $ s'' & totalSimTime %~ min aSimTime
-  
+
   -- Now we must test the remaining sim time. The above calls might have
   -- succeeded while still exhausting our remaining time -- which as far as
   -- animating is concerned is the same as not succeeding at all!
