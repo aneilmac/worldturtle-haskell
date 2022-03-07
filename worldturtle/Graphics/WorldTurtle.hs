@@ -30,7 +30,6 @@ module Graphics.WorldTurtle
      , run 
      , (>/>)
      -- * Parallel animation
-     -- $parallel
      , (>!>)
      -- * Further documentation
      , module Graphics.WorldTurtle.Commands
@@ -67,6 +66,7 @@ runTurtle :: TurtleCommand () -- ^ Command sequence to execute.
           -> IO ()
 runTurtle = runTurtle' white
 
+-- Variant of `runTurtle` which takes an additional background color parameter. 
 runTurtle' :: Color
           -> TurtleCommand () -- ^ Command sequence to execute.
           -> IO ()
@@ -98,9 +98,7 @@ runTurtle' bckCol c = runWorld' bckCol $ makeTurtle >>= run c
 --
 -- ![parallel and serial gif](docs/images/parallel_serial_turtles_2.gif)
 --
--- Note that `(>!>)` operator is a less specific version of `bindM2`.
---
--- The parallel operator is defined as:
+-- Note that `(>!>)` operator is an alias for `bindM2`, and is defined as:
 -- >  (>!>) = bindM2 (const . return)
 --
 (>!>) :: WorldCommand () -- ^ Turtle to apply the command upon.
@@ -144,7 +142,7 @@ runWorld' bckCol cmd = G.playIO display bckCol 30 (defaultWorld cmd) iterateRend
   where display = InWindow "World Turtle" (800, 600) (400, 300)
         iterateRender w = do
            sq <- worldComputation w
-           let p = renderPause sq
+           let p = renderPause sq -- Render whatever is in the coroutine.
            return $ G.applyViewPortToPicture (G.viewStateViewPort $ viewState w) p
         input e w 
              -- Reset key resets sim state (including unpausing). We 
@@ -161,8 +159,6 @@ runWorld' bckCol cmd = G.playIO display bckCol 30 (defaultWorld cmd) iterateRend
                sq' <- resumeSequence f sq -- Calculate new sequence
                return w { worldComputation = return sq'}
          | otherwise = return w
-
-
 
 -- | This is an infix version of `run` where the arguments are swapped.
 --
@@ -249,11 +245,4 @@ isPauseKey_ _ = False
    Notice that in a `WorldCommand` context we must create our own turtles with 
    `makeTurtle`! We them  apply the `TurtleCommand`
    on our turtles using the run operator `(>/>)`.
--}
-
-{- $parallel
-
-   #parallel#
-
-
 -}

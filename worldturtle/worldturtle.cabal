@@ -12,7 +12,7 @@ copyright:      2020 Archibald Neil MacDonald
 license:        BSD-3-Clause
 license-file:   LICENSE
 build-type:     Simple
-tested-with: GHC == 8.10.3, GHC == 9.0.1
+tested-with: GHC == 8.10.7, GHC == 9.0.1
 
 description: 
   Have you ever heard of [Turtle Graphics](https://en.wikipedia.org/wiki/Turtle_graphics)?

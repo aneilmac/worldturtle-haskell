@@ -15,9 +15,10 @@
   This reduces wasted calculations per-frame as the state of the previous frame 
   can now be carried into the next frame of animation.
 * Removed `WorldCommand` as an instance of `Control.Applicative` and `MonadPlus`. This did not
-  make sense in terms of parallelization. Introduced new `>!>` operator for parallel animations,
-  which is an alias for `bindM2` from `MonadParallel`.
+  make sense in terms of parallelization. Instead, `WorldComamnd` is now an instance of `MonadParallel`
+* Introduced new `>!>` operator for parallel animations.
 * Added the `labelwait-exe` test.
+* Updated examples to account for command changes.
 * Removed `spaceleak-exe` test.
 
 ## v0.2.2.1
