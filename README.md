@@ -52,7 +52,7 @@ main = runWorld $ do
   clear
 
   -- Draw the anticlockwise and clockwise circles in parallel.
-  (turtle1 >/> circle 90) <|> (turtle2 >/> circle (-90))
+  (turtle1 >/> circle 90) >!> (turtle2 >/> circle (-90))
 ```
 
 We get this animation:

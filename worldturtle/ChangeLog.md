@@ -17,6 +17,8 @@
 * Removed `WorldCommand` as an instance of `Control.Applicative` and `MonadPlus`. This did not
   make sense in terms of parallelization. Instead, `WorldComamnd` is now an instance of `MonadParallel`
 * Introduced new `>!>` operator for parallel animations.
+* `setPenDown` has been split into `setPenDown` and `setPenUp` to be more LOGO-like.
+* `setVisible` has been split into `setVisible` and `setInvisible` to be more LOGO-like.
 * Added the `labelwait-exe` test.
 * Updated examples to account for command changes.
 * Removed `spaceleak-exe` test.

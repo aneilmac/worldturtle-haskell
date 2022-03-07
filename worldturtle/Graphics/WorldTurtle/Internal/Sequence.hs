@@ -13,6 +13,7 @@ module Graphics.WorldTurtle.Internal.Sequence
   , decrementSimTime
   , addPicture
   , pics
+  , finalPics
   , turtles
   , generateTurtle
   , animate'

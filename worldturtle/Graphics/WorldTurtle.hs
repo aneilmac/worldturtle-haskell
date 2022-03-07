@@ -66,8 +66,8 @@ runTurtle :: TurtleCommand () -- ^ Command sequence to execute.
           -> IO ()
 runTurtle = runTurtle' white
 
--- Variant of `runTurtle` which takes an additional background color parameter. 
-runTurtle' :: Color
+-- | Variant of `runTurtle` which takes an additional background color parameter. 
+runTurtle' :: Color -- ^ Background color.
           -> TurtleCommand () -- ^ Command sequence to execute.
           -> IO ()
 runTurtle' bckCol c = runWorld' bckCol $ makeTurtle >>= run c
@@ -99,11 +99,12 @@ runTurtle' bckCol c = runWorld' bckCol $ makeTurtle >>= run c
 -- ![parallel and serial gif](docs/images/parallel_serial_turtles_2.gif)
 --
 -- Note that `(>!>)` is an alias for `bindM2`, and is defined as:
+-- 
 -- >  (>!>) = bindM2 (const . return)
 --
-(>!>) :: WorldCommand () -- ^ Turtle to apply the command upon.
-      -> WorldCommand () -- ^ Command to execute
-      -> WorldCommand () -- ^ Result as a `WorldCommand`
+(>!>) :: WorldCommand () -- ^ First command to execute in parallel
+      -> WorldCommand () -- ^ Second command to execute in parallel.
+      -> WorldCommand () -- ^ Result command
 (>!>) = bindM2 (const . return)
 infixl 3 >!>
 
@@ -134,7 +135,7 @@ runWorld :: WorldCommand () -- ^ Command sequence to execute
           -> IO ()
 runWorld = runWorld' white
 
--- Variant of `runWorld` which takes an additional background color parameter. 
+-- | Variant of `runWorld` which takes an additional background color parameter. 
 runWorld' :: Color -- ^ Background color
           -> WorldCommand () -- ^ Command sequence to execute
           -> IO ()

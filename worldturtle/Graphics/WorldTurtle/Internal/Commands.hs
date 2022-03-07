@@ -17,18 +17,16 @@ import Graphics.WorldTurtle.Internal.Sequence
 {- | A `WorldCommand` represents an instruction that affects the entire 
      animation canvas.
     
-    This could be as simple as "make a turtle" or more complicated like 
+    This could be as simple as "make a turtle" or more complicated, such as 
     "run these 5 turtles in parallel."
 
-    Like `TurtleCommand`s, `WorldCommand`s can be executed in order by 
+    Like `TurtleCommand`s, `WorldCommand`s can be executed in sequence by 
     combining commands in order using the monadic operator `(>>)`.
 
-    To execute a `TurtleCommand` in a `WorldCommand`, use either the 
-    `Graphics.WorldTurtle.run` function or the 
-    `Graphics.WorldTurtle.>/>` operator.
+    To execute a `TurtleCommand` within a `WorldCommand`, use the 
+    `Graphics.WorldTurtle.run` function or  `Graphics.WorldTurtle.>/>` operator.
 
-    For how to achieve parallel animations
-    see "Graphics.WorldTurtle#parallel".
+    For parallel animations, see `Graphics.WorldTurtle.>!>`.
 -}
 newtype WorldCommand a = WorldCommand 
   { 

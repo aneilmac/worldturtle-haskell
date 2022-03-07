@@ -48,7 +48,7 @@ drawFace = do
   t >/> do
     setSpeed 0 -- Instant draw
     setRotationSpeed 0 -- Instant draw
-    setVisible False
+    setInvisible
     setPenUp
     forM_ ([0,5..355] :: [Int]) $ \time -> do
       branch $ do

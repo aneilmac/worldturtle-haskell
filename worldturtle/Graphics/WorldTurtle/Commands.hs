@@ -68,6 +68,7 @@ module Graphics.WorldTurtle.Commands
   , setPenSize
   , setRepresentation
   , setVisible
+  , setInvisible
   -- * Common constants
   , east
   , north
@@ -117,7 +118,7 @@ makeTurtle = WorldCommand generateTurtle
     >  myCommand = do
     >    t1 <- makeTurtle' (0, 0)  0 green
     >    t2 <- makeTurtle' (0, 0) 90 red
-    >    (t1 >/> forward 90) \<|\> (t2 >/> forward 90)
+    >    (t1 >/> forward 90) >!> (t2 >/> forward 90)
 
     See `makeTurtle`.
 -}
@@ -187,6 +188,7 @@ stamp = seqToT $ tData_ >=> (addPicture . T.drawTurtle)
 --  The written text color will match turtle pen color.
 --
 -- This is eqivelent to:
+--
 -- > label = label' 0.2
 label :: String -- ^ String to write to screen.
       -> TurtleCommand ()
@@ -326,25 +328,28 @@ home = seqToT $ \ turtle -> do
     ts . T.position       .= (0, 0)
     ts . T.heading        .= 90
 
--- | Warps the turtle to a new position.
---   The turtle jumps to this new position with no animation. No line
---   is drawn when calling this command.
+-- | Sets the turtle's position to the new given value.
 --
---   Use `goto` if you want a line to be drawn.
+--   This command does not animate, nor is a line drawn
+--   between the old position and the new position.
 --
---   This does not affect the turtle's heading.
+--   Use `goto` if you want a drawn line.
+--
+--   This command does not affect the turtle's heading.
 jump :: P.Point -- ^ Position to warp to.
      -> TurtleCommand ()
 jump point = seqToT $ \ turtle -> do
   lift $ turtLens_ turtle . T.position .= point
 
--- | Warps the turtle to a new position.
---   The turtle jumps to this new position with no animation. If the pen is down
---   then a line is drawn.
---   
---   Use `jump` if you do not want a line to be drawn.
+-- | Sets the turtle's position to the new given value.
 --
---   This does not affect the turtle's heading.
+--   This command does not animate. A line will be drawn between
+--   the turtle's old position and the new set position if the turtle's
+--   pen is down.
+--
+--   Use `jump` if you do not want a drawn line.
+--
+--   This command does not affect the turtle's heading.
 goto :: P.Point -- ^ Position to warp to.
      -> TurtleCommand ()
 goto point = seqToT $ \ turtle -> do
@@ -356,7 +361,7 @@ goto point = seqToT $ \ turtle -> do
   lift $ turtLens_ turtle . T.position .= point
 
 {-# DEPRECATED setPosition "Use `goto` instead." #-}
--- | Deprecated. Alias of `goto`.
+-- | Alias of `goto`.
 setPosition :: P.Point -> TurtleCommand ()
 setPosition = goto
 
@@ -421,11 +426,21 @@ setPenSize = setter_ T.penSize
 visible :: TurtleCommand Bool -- ^ @True@ if turtle is visible, @False@ if not.
 visible = getter_ False T.visible
 
--- | Sets the turtle's visibility.
---   See `visible`.
-setVisible :: Bool -- ^ New state for visible flag.
-           -> TurtleCommand ()
-setVisible = setter_ T.visible
+-- | Sets the turtle's visibility to visible. 
+-- 
+--   The turtle's representation will be drawn to canvas.
+--
+--   See `visible` and `setInvisible`.
+setVisible :: TurtleCommand ()
+setVisible = setter_ T.visible True
+
+-- | Sets the turtle's visibility to invisible.
+-- 
+--   The turtle's representation will not be drawn to canvas.
+--
+--   See `visible` and `setVisible`.
+setInvisible :: TurtleCommand ()
+setInvisible = setter_ T.visible False
 
 -- | Returns the turtle's current speed.
 --   Speed is is @distance@ per second.
@@ -479,10 +494,12 @@ setRepresentation = setter_ T.representation
 
 -- | Clears all drawings form the canvas. Does not alter any turtle's state.
 clear :: WorldCommand ()
-clear = WorldCommand $ lift $ pics .= mempty
+clear = WorldCommand $ lift $ do
+   pics .= mempty
+   finalPics .= mempty
 
--- | Sleeps for a given amount of time in seconds. When sleeping no animation 
---   runs. 
+-- | World sleeps for a given amount of time in seconds 
+--   before running the next command.
 --
 --   This is the `WorldComamnd` variant of `wait`.
 --
@@ -491,7 +508,8 @@ sleep :: Float  -- ^ Amount of time to sleep in seconds.
       -> WorldCommand ()
 sleep = WorldCommand . void . decrementSimTime . max 0
 
--- | Turtle waits for a given amount of time in seconds. When sleeping turtle does not move. 
+-- | Turtle waits for a given amount of time in seconds 
+--   before continuing with the next command.
 -- 
 --   This is the `TurtleCommand` variant of `sleep`.
 --
@@ -503,11 +521,16 @@ wait f = seqToT $ \ _ -> void . decrementSimTime $ max 0 f
 -- | Repeats the same command several times.
 --
 -- Example:
+-- 
 --   > repeatFor 4 $ do 
 --   >     forward 50
 --   >     right 90
 --
--- This is less generic alias of `replicateM_`.
+-- This is an alias of `replicateM_`.
+--
+-- That is:
+--
+-- > repeatFor = replicateM_
 repeatFor :: Int -- ^ Number of times to repeat a command.
        -> TurtleCommand a -- ^ Command to repeat.
        -> TurtleCommand ()
