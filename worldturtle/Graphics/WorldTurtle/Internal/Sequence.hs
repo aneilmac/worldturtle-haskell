@@ -46,7 +46,7 @@ type TurtleState = StateT TSC IO
 --   This represents a computation that can be "paused." I.E. we can only 
 --   animate so much of the scene with the time given.
 type SequenceCommand a = Coroutine (Request TSC Float) TurtleState a
-type SequencePause a = Either (Request TSC Float (SequenceCommand a)) a
+type SequencePause a = Either (Request TSC Float (SequenceCommand (a, TSC))) (a, TSC)
 
 -- Careful of editing the Turtle comment below as it is public docs!
 -- Really "Turtle" is just a handle to internal TurtleData. It is a key that
@@ -96,7 +96,7 @@ decrementSimTime d = do
     s <- lift get
 
     delta <- request s
-    lift $ simTime .= delta
+    lift $ simTime += delta
   return outOfTime
 
 -- | Given a picture, adds it to the picture list.
@@ -114,10 +114,12 @@ startSequence :: TSC
 startSequence tsc commands = evalStateT (resume commands') tsc
   where commands' = do
           _ <- decrementSimTime 0 -- Kick off an immediate Yield.
-          commands
+          a <- commands
+          g <- lift get
+          return (a, g)
 
 runSequence :: TSC
-            -> SequenceCommand a -- ^ Commands to execute
+            -> SequenceCommand (a, TSC) -- ^ Commands to execute
             -> IO (SequencePause a)
 runSequence tsc commands = evalStateT (resume commands) tsc
 
@@ -125,12 +127,12 @@ resumeSequence :: Float -> SequencePause a -> IO (SequencePause a)
 resumeSequence delta (Left (Request tsc response)) = runSequence tsc $ response delta
 resumeSequence _ a = return a
 
-renderPause :: Picture -> SequencePause a -> Picture
-renderPause p sq = maybe p renderTurtle (stateForPause sq)
+renderPause :: SequencePause a -> Picture
+renderPause sq = renderTurtle $ stateForPause sq
 
-stateForPause :: SequencePause a -> Maybe TSC
-stateForPause (Left (Request s _)) = Just s
-stateForPause _ = Nothing
+stateForPause :: SequencePause a -> TSC
+stateForPause (Left (Request s _)) = s
+stateForPause (Right (_, s)) = s
 
 -- | Exctracts the image frame from the current turtle state.
 renderTurtle :: TSC -> Picture
@@ -213,8 +215,8 @@ runParallel f a b =
       b' = b >>= \bx -> lift get >>= \g -> return (bx, g)
    in runParallel_ f a' b' 
 
--- | Given two sequences /a/ and /b/, instead of running them both as separate 
---   animations, run them both in parallel!
+-- | Main body for parallel animations. Runs one sequence, rewinds, then 
+--   runs the other sequence, we then attempt to continue our calculations.
 runParallel_ :: (a -> b -> SequenceCommand c)
             -> SequenceCommand (a, TSC) -- ^ Sequence /a/ to run.
             -> SequenceCommand (b, TSC) -- ^ Sequence /b/ to run.
@@ -252,7 +254,7 @@ runParallel_ f a b = do
   where grabState (Left (Request s _)) = s
         grabState (Right (_, s)) = s
 
-combinePauses_ :: (a -> b ->  SequenceCommand c) -> Float -> SequencePause (a, TSC) -> SequencePause (b, TSC) -> SequenceCommand c
+combinePauses_ :: (a -> b ->  SequenceCommand c) -> Float -> SequencePause a -> SequencePause b -> SequenceCommand c
 combinePauses_ f _ (Right (a, _)) (Right (b, _)) = f a b
 combinePauses_ f d (Right (a, _)) (Left (Request _ y)) = y d >>= f a . fst
 combinePauses_ f d (Left (Request _ x)) (Right (b, _)) = x d >>= (`f` b) . fst

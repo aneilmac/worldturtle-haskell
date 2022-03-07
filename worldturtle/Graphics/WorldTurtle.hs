@@ -143,12 +143,13 @@ runWorld' :: Color -- ^ Background color
 runWorld' bckCol cmd = G.playIO display bckCol 30 (defaultWorld cmd) iterateRender input timePass
   where display = InWindow "World Turtle" (800, 600) (400, 300)
         iterateRender w = do
-           let p = picture w
+           sq <- worldComputation w
+           let p = renderPause sq
            return $ G.applyViewPortToPicture (G.viewStateViewPort $ viewState w) p
         input e w 
              -- Reset key resets sim state (including unpausing). We 
              -- deliberately keep view state the same.
-             | isResetKey_ e = return w {worldComputation = restartSequence cmd, picture = G.blank, running = True }
+             | isResetKey_ e = return w {worldComputation = restartSequence cmd, running = True }
              -- Pause prevents any proceeding.
              | isPauseKey_ e = return w { running = not $ running w }
              -- Let Gloss consume the command.
@@ -158,10 +159,7 @@ runWorld' bckCol cmd = G.playIO display bckCol 30 (defaultWorld cmd) iterateRend
          | running w = do
                sq <- worldComputation w -- Grab previous sequence
                sq' <- resumeSequence f sq -- Calculate new sequence
-               -- Attempt to render new picture `p'`, fallback to `p` on failure.
-               let p = picture w
-               let p' = renderPause p sq'
-               return w { worldComputation = return sq', picture = p' }
+               return w { worldComputation = return sq'}
          | otherwise = return w
 
 
@@ -187,7 +185,6 @@ runWorld' bckCol cmd = G.playIO display bckCol 30 (defaultWorld cmd) iterateRend
 infixl 4 >/>
 
 data World a = World { running :: !Bool
-                     , picture :: G.Picture 
                      , worldComputation:: IO (SequencePause a)
                      , viewState :: G.ViewState
                      }
@@ -196,7 +193,7 @@ restartSequence :: WorldCommand a -> IO (SequencePause a)
 restartSequence cmnd = startSequence defaultTSC (seqW cmnd)
 
 defaultWorld :: WorldCommand a -> World a
-defaultWorld cmd = World True G.blank (restartSequence cmd)
+defaultWorld cmd = World True (restartSequence cmd)
                  $ G.viewStateInitWithConfig 
                  -- Easier to do this to have spacebar overwrite R.
                  $ reverse 

@@ -13,7 +13,7 @@ main = runWorld' orange $ do
 
 turtleF1 :: TurtleCommand ()
 turtleF1 = do
-    -- wait 2
+    wait 2
     fd 50 
     label "T1"
 
