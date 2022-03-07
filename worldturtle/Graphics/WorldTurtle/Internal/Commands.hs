@@ -48,23 +48,11 @@ instance Monad WorldCommand where
 instance MonadParallel WorldCommand where
   bindM2 f (WorldCommand a) (WorldCommand b) = WorldCommand $ runParallel (\x y -> seqW (f x y)) a b
 
--- instance Alternative WorldCommand where
---   empty = WorldCommand empty
---   (<|>) (WorldCommand a) (WorldCommand b) = 
---     WorldCommand $! alternateSequence a b
-
--- instance MonadPlus WorldCommand
-
--- instance Semigroup a => Semigroup (WorldCommand a) where
---   (WorldCommand a) <> (WorldCommand b) = 
---     WorldCommand $! combineSequence a b
-
 instance MonadIO WorldCommand where
   liftIO a = WorldCommand $ liftIO a
 
 instance MonadFail WorldCommand where
   fail t = WorldCommand $! addPicture (text t) >> fail t
-
 
 {-| A `TurtleCommand` represents an instruction to execute on a turtle.
     It could be as simple as "draw a line" or more complicated like 

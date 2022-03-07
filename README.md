@@ -33,7 +33,7 @@ Like so!
  
 ### Parallel animations
 
-Use of the Alternative operator `(<|>)` allows animations to run in
+Use of the parallel animation operator `(>!>)` allows animations to run in
 parallel. The
   [parallel/serial comparison](worldturtle-examples/parallelserialcomparison/Main.hs)
 example shows that when given this code:

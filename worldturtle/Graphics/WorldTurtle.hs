@@ -74,8 +74,8 @@ runTurtle' bckCol c = runWorld' bckCol $ makeTurtle >>= run c
 
 -- | While `WorldCommand`s can be combined with `(>>)` to produce sequential
 --   instructions, we can also use the
---   alternative operator `(>!>)` to achieve parallel instructions. That is: 
---   animate two turtles at time!
+--   parallel animation operator `(>!>)` to achieve parallel instructions. 
+--   That is: animate two turtles at time!
 --
 --   Here is an example:
 --
@@ -98,7 +98,7 @@ runTurtle' bckCol c = runWorld' bckCol $ makeTurtle >>= run c
 --
 -- ![parallel and serial gif](docs/images/parallel_serial_turtles_2.gif)
 --
--- Note that `(>!>)` operator is an alias for `bindM2`, and is defined as:
+-- Note that `(>!>)` is an alias for `bindM2`, and is defined as:
 -- >  (>!>) = bindM2 (const . return)
 --
 (>!>) :: WorldCommand () -- ^ Turtle to apply the command upon.
