@@ -24,7 +24,7 @@ main = do
     s <- makeHand green  secsRadius  secsInMinute $ secsToDeg localTime
     m <- makeHand orange minsRadius  secsInHour   $ minsToDeg localTime
     h <- makeHand red    hoursRadius secsInDay    $ hoursToDeg localTime
-    moveHand secsRadius s <|> moveHand minsRadius m <|> moveHand hoursRadius h
+    moveHand secsRadius s >!> moveHand minsRadius m >!> moveHand hoursRadius h
 
 moveHand :: Float -> Turtle -> WorldCommand ()
 moveHand radius = run $ forever $ circle (-radius)
