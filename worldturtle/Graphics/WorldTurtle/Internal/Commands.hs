@@ -7,11 +7,12 @@ module Graphics.WorldTurtle.Internal.Commands
   ) where
 
 import Control.Applicative
-import Control.Monad
 import Control.Monad.IO.Class
 import Graphics.Gloss.Data.Picture (text)
+import Control.Monad.Parallel
 
 import Graphics.WorldTurtle.Internal.Sequence
+    ( Turtle, SequenceCommand, addPicture, runParallel )
 
 {- | A `WorldCommand` represents an instruction that affects the entire 
      animation canvas.
@@ -44,16 +45,19 @@ instance Applicative WorldCommand where
 instance Monad WorldCommand where
   (WorldCommand a) >>= f = WorldCommand $! a >>= \s -> seqW $! f s
 
-instance Alternative WorldCommand where
-  empty = WorldCommand empty
-  (<|>) (WorldCommand a) (WorldCommand b) = 
-    WorldCommand $! alternateSequence a b
+instance MonadParallel WorldCommand where
+  bindM2 f (WorldCommand a) (WorldCommand b) = WorldCommand $ runParallel (\x y -> seqW (f x y)) a b
 
-instance Semigroup a => Semigroup (WorldCommand a) where
-  (WorldCommand a) <> (WorldCommand b) = 
-    WorldCommand $! combineSequence a b
+-- instance Alternative WorldCommand where
+--   empty = WorldCommand empty
+--   (<|>) (WorldCommand a) (WorldCommand b) = 
+--     WorldCommand $! alternateSequence a b
 
-instance MonadPlus WorldCommand
+-- instance MonadPlus WorldCommand
+
+-- instance Semigroup a => Semigroup (WorldCommand a) where
+--   (WorldCommand a) <> (WorldCommand b) = 
+--     WorldCommand $! combineSequence a b
 
 instance MonadIO WorldCommand where
   liftIO a = WorldCommand $ liftIO a

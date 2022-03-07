@@ -36,7 +36,7 @@ makeHand c radius time offset = do
     setRepresentation $ G.color c $ G.pictures [ G.line [(0, 0), (0, -radius)]
                                                , G.circleSolid 10
                                                ]
-    setPenDown False
+    setPenUp
     setSpeed 0 -- Instant draw
     arc (-radius) offset -- Catch the hand up to where it should be.
     setSpeed (pi * 2 * radius / time)
@@ -49,11 +49,11 @@ drawFace = do
     setSpeed 0 -- Instant draw
     setRotationSpeed 0 -- Instant draw
     setVisible False
-    setPenDown False
+    setPenUp
     forM_ ([0,5..355] :: [Int]) $ \time -> do
       branch $ do
         left 90
-        setPenDown True
+        setPenDown
         let l = if time `mod` 15 == 0 then 20 else 10
         forward l
       arc clockRadius 5

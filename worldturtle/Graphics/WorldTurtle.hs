@@ -31,17 +31,14 @@ module Graphics.WorldTurtle
      , (>/>)
      -- * Parallel animation
      -- $parallel
-     , (<|>)
-     -- * Stop an animation
-     -- $empty
-     , empty
+     , (>!>)
      -- * Further documentation
      , module Graphics.WorldTurtle.Commands
      , module Graphics.WorldTurtle.Shapes
      , module Graphics.WorldTurtle.Color
      ) where
 
-import Control.Applicative (empty, (<|>))
+import Control.Monad.Parallel
 
 import Graphics.Gloss.Data.Display (Display (..))
 import qualified Graphics.Gloss.Data.ViewState as G
@@ -50,11 +47,11 @@ import qualified Graphics.Gloss.Interface.IO.Game as G
 
 import Graphics.WorldTurtle.Color
 import Graphics.WorldTurtle.Commands
-import Graphics.WorldTurtle.Internal.Sequence (renderTurtle)
+import Graphics.WorldTurtle.Internal.Sequence (SequencePause, startSequence, resumeSequence, renderPause, defaultTSC)
 import Graphics.WorldTurtle.Internal.Commands ( TurtleCommand
                                               , WorldCommand (..)
-                                              , seqW
                                               , run
+                                              , seqW
                                               )
 import Graphics.WorldTurtle.Shapes
 
@@ -74,6 +71,43 @@ runTurtle' :: Color
           -> TurtleCommand () -- ^ Command sequence to execute.
           -> IO ()
 runTurtle' bckCol c = runWorld' bckCol $ makeTurtle >>= run c
+
+-- | While `WorldCommand`s can be combined with `(>>)` to produce sequential
+--   instructions, we can also use the
+--   alternative operator `(>!>)` to achieve parallel instructions. That is: 
+--   animate two turtles at time!
+--
+--   Here is an example:
+--
+--   >  import Graphics.WorldTurtle
+--   >
+--   >  main :: IO ()
+--   >  main = runWorld $ do
+--   >    t1 <- makeTurtle' (0, 0) north green
+--   >    t2 <- makeTurtle' (0, 0) north red
+--   >
+--   >    -- Draw the anticlockwise and clockwise circles in sequence. 
+--   >    t1 >/> circle 90 >> t2 >/> circle (-90)
+--   >  
+--   >    clear
+--   >
+--   >    -- Draw the anticlockwise and clockwise circles in parallel.
+--   >    t1 >/> circle 90 >!> t2 >/> circle (-90)
+--
+--   Which would produce an animation like this
+--
+-- ![parallel and serial gif](docs/images/parallel_serial_turtles_2.gif)
+--
+-- Note that `(>!>)` operator is a less specific version of `bindM2`.
+--
+-- The parallel operator is defined as:
+-- >  (>!>) = bindM2 (const . return)
+--
+(>!>) :: WorldCommand () -- ^ Turtle to apply the command upon.
+      -> WorldCommand () -- ^ Command to execute
+      -> WorldCommand () -- ^ Result as a `WorldCommand`
+(>!>) = bindM2 (const . return)
+infixl 3 >!>
 
 {- | `runWorld` takes a `WorldCommand` and produces the animation in a new
       window! 
@@ -106,23 +140,31 @@ runWorld = runWorld' white
 runWorld' :: Color -- ^ Background color
           -> WorldCommand () -- ^ Command sequence to execute
           -> IO ()
-runWorld' bckCol tc = G.playIO display bckCol 30 defaultWorld iterateRender input timePass
+runWorld' bckCol cmd = G.playIO display bckCol 30 (defaultWorld cmd) iterateRender input timePass
   where display = InWindow "World Turtle" (800, 600) (400, 300)
         iterateRender w = do
-           p <- renderTurtle (seqW tc) (elapsedTime w)
+           let p = picture w
            return $ G.applyViewPortToPicture (G.viewStateViewPort $ viewState w) p
         input e w 
              -- Reset key resets sim state (including unpausing). We 
              -- deliberately keep view state the same.
-             | isResetKey_ e = return w { elapsedTime = 0, running = True }
+             | isResetKey_ e = return w {worldComputation = restartSequence cmd, picture = G.blank, running = True }
              -- Pause prevents any proceeding.
              | isPauseKey_ e = return w { running = not $ running w }
              -- Let Gloss consume the command.
              | otherwise = return w { viewState = G.updateViewStateWithEvent e $ viewState w } 
         -- Increment simulation time if we are not paused.
         timePass f w
-         | running w = return w { elapsedTime = f + elapsedTime w }
+         | running w = do
+               sq <- worldComputation w -- Grab previous sequence
+               sq' <- resumeSequence f sq -- Calculate new sequence
+               -- Attempt to render new picture `p'`, fallback to `p` on failure.
+               let p = picture w
+               let p' = renderPause p sq'
+               return w { worldComputation = return sq', picture = p' }
          | otherwise = return w
+
+
 
 -- | This is an infix version of `run` where the arguments are swapped.
 --
@@ -144,18 +186,22 @@ runWorld' bckCol tc = G.playIO display bckCol 30 defaultWorld iterateRender inpu
 (>/>) = flip run
 infixl 4 >/>
 
-data World = World { elapsedTime :: !Float
-                   , running :: !Bool
-                   , viewState :: G.ViewState 
-                   }
+data World a = World { running :: !Bool
+                     , picture :: G.Picture 
+                     , worldComputation:: IO (SequencePause a)
+                     , viewState :: G.ViewState
+                     }
 
-defaultWorld :: World
-defaultWorld = World 0 True 
-             $ G.viewStateInitWithConfig 
-             -- Easier to do this to have spacebar overwrite R.
-             $ reverse 
-             $ (G.CRestore, [(G.SpecialKey G.KeySpace, Nothing)])
-             : G.defaultCommandConfig
+restartSequence :: WorldCommand a -> IO (SequencePause a)
+restartSequence cmnd = startSequence defaultTSC (seqW cmnd)
+
+defaultWorld :: WorldCommand a -> World a
+defaultWorld cmd = World True G.blank (restartSequence cmd)
+                 $ G.viewStateInitWithConfig 
+                 -- Easier to do this to have spacebar overwrite R.
+                 $ reverse 
+                $ (G.CRestore, [(G.SpecialKey G.KeySpace, Nothing)])
+                : G.defaultCommandConfig
 
 -- | Tests to see if a key-event is the reset key.
 isResetKey_ :: G.Event -> Bool
@@ -212,43 +258,5 @@ isPauseKey_ _ = False
 
    #parallel#
 
-   While `WorldCommand`s can be combined with `(>>)` to produce sequential
-   instructions, we can also use the
-   alternative operator `(<|>)` to achieve parallel instructions. That is: 
-   animate two turtles at time!
 
-   Here is an example:
-
-   >  import Graphics.WorldTurtle
-   >
-   >  main :: IO ()
-   >  main = runWorld $ do
-   >    t1 <- makeTurtle' (0, 0) north green
-   >    t2 <- makeTurtle' (0, 0) north red
-   >
-   >    -- Draw the anticlockwise and clockwise circles in sequence. 
-   >    t1 >/> circle 90 >> t2 >/> circle (-90)
-   >  
-   >    clear
-   >
-   >    -- Draw the anticlockwise and clockwise circles in parallel.
-   >    t1 >/> circle 90 <|> t2 >/> circle (-90)
-
-   Which would produce an animation like this
-
-   ![parallel and serial gif](docs/images/parallel_serial_turtles_2.gif)
-
-   Note that the result of @x \<|\> y@ is:
-   
-   >>> x <|> y
-   x
-
-   when @x@ is not `Control.Applicative.empty`, otherwise the result is @y@.
--}
-
-{- $empty
-   If a `WorldCommand` is `Control.Applicative.empty`, then this stops this 
-   section of  animation and it does not progress. To this end 
-   `Control.Monad.guard` can be used to calculate when to stop part of an 
-   animation sequence.
 -}

@@ -9,11 +9,11 @@ main = runWorld' orange $ do
     t2 <- makeTurtle 
     t2 >/> jump (50, 0)
     liftIO $ putStrLn "Preparing to draw."
-    t1 >/> turtleF1  <|> t2 >/> turtleF2
+    t1 >/> turtleF1 >!> t2 >/> turtleF2
 
 turtleF1 :: TurtleCommand ()
 turtleF1 = do
-    wait 2
+    -- wait 2
     fd 50 
     label "T1"
 

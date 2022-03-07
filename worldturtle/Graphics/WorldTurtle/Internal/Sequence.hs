@@ -5,36 +5,36 @@ module Graphics.WorldTurtle.Internal.Sequence
   ( Turtle 
   , TSC
   , SequenceCommand
+  , SequencePause
   , defaultTSC
-  , processTurtle
-  , renderTurtle
-  , addPicture
-  , simTime
-  , setSimTime
+  , startSequence
+  , resumeSequence
+  , renderPause
   , decrementSimTime
+  , addPicture
   , pics
-  , totalSimTime
   , turtles
   , generateTurtle
   , animate'
-  , animate
-  , combineSequence
-  , alternateSequence
+  , runParallel
   ) where
 
 import Graphics.WorldTurtle.Internal.Turtle
+    ( defaultTurtle, drawTurtle, TurtleData )
 
-import Graphics.Gloss.Data.Picture (Picture)
+import Graphics.Gloss.Data.Picture (Picture, pictures)
 
-import Control.Applicative (empty)
 import Control.Monad (when)
+import Control.Monad.IO.Class (liftIO)
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Maybe
 import Control.Monad.Trans.State.Strict
+    ( StateT, get, put, evalStateT )
 
 import Control.Lens
-    ( (&), (^.), use, (%=), (%~), (+=), (.=), (.~), makeLenses )
-import Control.Monad.IO.Class (liftIO)
+    ( (.~), (&), (+=), (^.), (%=), (.=), use, makeLenses )
+
+import Control.Monad.Coroutine (Coroutine(..))
+import Control.Monad.Coroutine.SuspensionFunctors (Request(..), request )
 
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
@@ -42,10 +42,11 @@ import qualified Data.Map.Strict as Map
 -- | State Monad that takes our `TSC` type as its state object.
 type TurtleState = StateT TSC IO
 
--- | Maybe Monad on top of the State Monad of form @SequenceCommand a@.
---   This represents a computation that can be "partial." I.E. we can only 
+-- | Maybe Coroutine on top of the State Monad of form @SequenceCommand a@.
+--   This represents a computation that can be "paused." I.E. we can only 
 --   animate so much of the scene with the time given.
-type SequenceCommand a = MaybeT TurtleState a
+type SequenceCommand a = Coroutine (Request TSC Float) TurtleState a
+type SequencePause a = Either (Request TSC Float (SequenceCommand a)) a
 
 -- Careful of editing the Turtle comment below as it is public docs!
 -- Really "Turtle" is just a handle to internal TurtleData. It is a key that
@@ -57,8 +58,9 @@ type SequenceCommand a = MaybeT TurtleState a
 newtype Turtle = Turtle Int deriving (Eq, Ord)
 
 data TSC = TSC
-  { _pics :: ![Picture] -- ^ All pictures that make up the current canvas
-  , _totalSimTime :: !Float -- ^ Remaining available for animating
+  { _pics :: ![Picture] -- ^ All pictures currently drawn this sequence.
+  , _finalPics :: ![Picture] -- ^ All pictures that have successfuly drawn in previous sequences.
+  , _simTime :: !Float -- ^ Total simulation time.
   , _turtles :: !(Map Turtle TurtleData) -- Collection of all turtles.
   , _nextTurtleId :: !Int -- ^ ID of next turtle to be generated.
   }
@@ -66,68 +68,82 @@ data TSC = TSC
 $(makeLenses ''TSC)
 
 -- | Generates default parameter arguments.
-defaultTSC :: Float -> TSC
-defaultTSC givenTime = TSC 
+defaultTSC :: TSC
+defaultTSC = TSC 
            { _pics = mempty
-           , _totalSimTime = givenTime
+           , _finalPics = mempty
+           , _simTime = 0
            , _turtles = Map.empty
            , _nextTurtleId = 0
            }
 
--- | Gets the remaining simulation time of the current turtle process.
--- The simulation time dictates how much time is remaining for an animation,
--- and it will be reduced as the animations play in sequence. Once this value
--- hits 0 the exit command will be called and the monad will stop processing.
-simTime :: SequenceCommand Float
-simTime = use totalSimTime
+-- | Attempts to reduce our simulation time by @d@. 
+--   If we run out of simualtion time, this Monad whill yield,
+--   allowing for a render, before it continues once again.
+decrementSimTime :: Float -- ^ Decrement simulation time by this amount. 
+                 -> SequenceCommand Bool -- ^ True if simulation yielded, false otherwise.
+decrementSimTime d = do
+  t <- lift $ use simTime
+  let t' = max 0 (t - d)
+  let outOfTime = t' <= 0
+  lift $ simTime .= t' 
+  when outOfTime $ do
+    --- Before we yield, take the chance to concat our final pics.
+    lift $ finalPics %= \f -> [pictures f]
+    -- If we have run out of time,
+    -- pause the continuation to allow for
+    -- a render, then resume.
+    s <- lift get
 
--- | Sets the simulation time in the state monad.
--- If the simulation time is <= 0 then this setter will immediately call the
--- exit function which will kill any further processing of the monad.
-setSimTime :: Float -- ^ Time to set.
-           -> SequenceCommand ()
-setSimTime newTime = do
-  let newTime' = max 0 newTime
-  totalSimTime .= newTime'
-  when (newTime' <= 0) empty
-
--- | Takes a value away form the current sim time and store the updated time.
--- See `setSimTime`.
-decrementSimTime :: Float -- ^ Value to subtract from store simulation time.
-                 -> SequenceCommand ()
-decrementSimTime duration = simTime >>= \ t -> setSimTime (t - duration)
+    delta <- request s
+    lift $ simTime .= delta
+  return outOfTime
 
 -- | Given a picture, adds it to the picture list.
 addPicture :: Picture -- ^ Picture to add to our animation
            -> SequenceCommand ()
-addPicture p = pics %= ($!) (p :)
+addPicture p = lift $ pics %= ($!) (p :)
 
--- | Given a sequence and a State, returns the result of the computation and the
+-- | Given a sequence, returns the result of the computation and the
 --   final state of the computation of form @(r, s)@. When @r@ is @Just@, then 
 --   the computation completed, otherwise the computation ended early due to
 --   lack of time available (i.e. a partial animation).
-processTurtle :: SequenceCommand a 
-              -> TSC
-              -> IO (Maybe a, TSC)
-processTurtle commands tsc = 
-  let drawS = runMaybeT $ decrementSimTime 0 >> commands
-   in runStateT drawS tsc
+startSequence :: TSC
+              -> SequenceCommand a -- ^ Commands to execute
+              -> IO (SequencePause a)
+startSequence tsc commands = evalStateT (resume commands') tsc
+  where commands' = do
+          _ <- decrementSimTime 0 -- Kick off an immediate Yield.
+          commands
 
--- | Given a computation to run and an amount of time to run it in, renders the
---   final "picture".
-renderTurtle :: SequenceCommand a 
-             -> Float 
-             -> IO Picture
-renderTurtle c f = do
-  let t  = defaultTSC f
-  (_, s) <- processTurtle c t
-  return $ mconcat $ reverse (s ^. pics) ++ drawTurtles (s ^. turtles)
+runSequence :: TSC
+            -> SequenceCommand a -- ^ Commands to execute
+            -> IO (SequencePause a)
+runSequence tsc commands = evalStateT (resume commands) tsc
+
+resumeSequence :: Float -> SequencePause a -> IO (SequencePause a)
+resumeSequence delta (Left (Request tsc response)) = runSequence tsc $ response delta
+resumeSequence _ a = return a
+
+renderPause :: Picture -> SequencePause a -> Picture
+renderPause p sq = maybe p renderTurtle (stateForPause sq)
+
+stateForPause :: SequencePause a -> Maybe TSC
+stateForPause (Left (Request s _)) = Just s
+stateForPause _ = Nothing
+
+-- | Exctracts the image frame from the current turtle state.
+renderTurtle :: TSC -> Picture
+renderTurtle t = mconcat $ 
+  (t ^. finalPics) ++
+  (t ^. pics) ++ 
+  drawTurtles (t ^. turtles)
 
 drawTurtles :: Map Turtle TurtleData -> [Picture]
 drawTurtles m = drawTurtle <$> Map.elems m 
 
 generateTurtle :: SequenceCommand Turtle
-generateTurtle = do
+generateTurtle = lift $ do
   t <- Turtle <$> use nextTurtleId
   turtles %= Map.insert t defaultTurtle
   nextTurtleId += 1
@@ -138,81 +154,106 @@ animate' :: Float
          -> (Float -> SequenceCommand a) 
          -> SequenceCommand a
 animate' distance turtleSpeed callback =
-   let duration = distance / turtleSpeed
-       d' = if isNaN duration || isInfinite duration then 0 else duration
-       --  if speed is 0 we use this as a "no animation" command from 
-       --   user-space.
-     in animate (abs d') callback
+  let duration = distance / turtleSpeed
+      d' = if isNaN duration || isInfinite duration then 0 else duration
+      --  if speed is 0 we use this as a "no animation" command from 
+      --   user-space.
+  in do 
+    t <- animate (abs d') callback
+    -- If we reach this point, then a "full" animation
+    -- has completed successfully. We move the drawn images
+    -- from our temp pics list to our finalPics list, and 
+    -- empty the temp pics list.
+    lift $ do
+      p <- use pics
+      finalPics %= ($!) (++ p)
+      pics .= mempty
+    return t
 
 animate :: Float 
         -> (Float -> SequenceCommand a) 
         -> SequenceCommand a
 animate duration callback = do
-   timeRemaining <- simTime -- simulation time to go
-   let availableTime = min timeRemaining duration
-   --  Amount of time we have to complete the animation before we need to exit.
-   let timeQuot = if availableTime == 0 then 1 else availableTime / duration
-   --  quotient of available time vs required time. Note that when the duration
-   --   is 0 we say "don't do any animation"
-   t <- callback timeQuot 
-   --  Perform the calculation with the quotient for lerping
-   decrementSimTime availableTime
-   --  Test to see if this is the end of our animation and if so exit early
-   return t
+  oldState <- lift get
 
--- | Runs two items in parallel then applies a semigroup combination operator
---   to the result of both.
---   This combination can only return if both A and B return. Compare to 
---   `alternateSequence` which can return if one returns.
-combineSequence :: Semigroup a
-                => SequenceCommand a -- ^ Sequence /a/ to run.
-                -> SequenceCommand a -- ^ Sequence /b/ to run.
-                -> SequenceCommand a 
-                    -- ^ New sequence of A and B in parallel.
-combineSequence a b = do
-  (aVal, bVal) <- runParallel a b
-  combo aVal bVal
-  where combo (Just x) (Just y)  = return (x <> y)
-        combo _ _                = empty
+  timeRemaining <- lift $ use simTime -- simulation time to go
+  let availableTime = min timeRemaining duration
+  --  Amount of time we have to complete the animation before we need to exit.
+  let timeQuot = if availableTime == 0 then 1 else availableTime / duration
+  --  quotient of available time vs required time. Note that when the duration
+  --   is 0 we say "don't do any animation"
+  
+  t <- callback timeQuot 
+   
+  --  Perform the calculation with the quotient for lerping
+  outOfTime <- decrementSimTime availableTime
 
--- | Runs two items in sequence, returns the result of /a/ if /a/ passes,
---   otherwise returns the results of /b/. The implication of this is that only
---   the result of a will be returned while animating, and b when animation is
---   finished.
-alternateSequence :: SequenceCommand a -- ^ Sequence /a/ to run.
-                  -> SequenceCommand a -- ^ Sequence /b/ to run.
-                  -> SequenceCommand a
-alternateSequence a b = do
-  (aVal, bVal) <- runParallel a b
-  combo aVal bVal
-  where combo (Just x) _ = return x
-        combo _ (Just y) = return y
-        combo _ _        = empty
+    -- When out of time has occurred, all progress that has been made this `animate` call
+    -- is thrown away after being drawn. We re-attempt the animation, with more simulation
+    -- time available so that the sequence goes "further."
+  if outOfTime then do
+      let oldTime = oldState ^. simTime
+      newTime <- lift $ use simTime
+      let time = newTime + oldTime
+      lift $ put $ oldState & simTime .~ time
+      animate duration callback
+    else 
+      return t
+
 
 -- | Given two sequences /a/ and /b/, instead of running them both as separate 
 --   animations, run them both in parallel!
-runParallel :: SequenceCommand a -- ^ Sequence /a/ to run.
+runParallel :: (a -> b -> SequenceCommand c)
+            -> SequenceCommand a -- ^ Sequence /a/ to run.
             -> SequenceCommand b -- ^ Sequence /b/ to run.
-            -> SequenceCommand (Maybe a, Maybe b)
+            -> SequenceCommand c
                -- ^ New sequence of A and B which returns both results.
-runParallel a b = do
+runParallel f a b = 
+  let a' = a >>= \ax -> lift get >>= \g -> return (ax, g)
+      b' = b >>= \bx -> lift get >>= \g -> return (bx, g)
+   in runParallel_ f a' b' 
 
-  startSimTime <- use totalSimTime
-
+-- | Given two sequences /a/ and /b/, instead of running them both as separate 
+--   animations, run them both in parallel!
+runParallel_ :: (a -> b -> SequenceCommand c)
+            -> SequenceCommand (a, TSC) -- ^ Sequence /a/ to run.
+            -> SequenceCommand (b, TSC) -- ^ Sequence /b/ to run.
+            -> SequenceCommand c
+               -- ^ New sequence of A and B which returns both results.
+runParallel_ f a b = do
+  startSimTime <- lift $ use simTime
   s <- lift get
+  
   -- Run the "A" animation
-  (aVal, bVal, aSimTime, s'') <- liftIO $ processTurtle a s >>= \(aVal, s') -> do
-    let aSimTime = s' ^. totalSimTime
-    -- Run the "B" animation from the same time
-    (bVal, s'') <- processTurtle b $ s' & totalSimTime .~ startSimTime
-    return (aVal, bVal, aSimTime, s'')
-    -- No subsequent animation can proceed until the longest animation completes.
-    -- We take the remaining animation time to be the remaining time of the 
-    -- longest running animation
-  lift $ put $ s'' & totalSimTime %~ min aSimTime
+  aVal <- liftIO $ runSequence s a
+  let s' = grabState aVal
+  let aTime = s' ^. simTime
 
-  -- Now we must test the remaining sim time. The above calls might have
-  -- succeeded while still exhausting our remaining time -- which as far as
-  -- animating is concerned is the same as not succeeding at all!
-  decrementSimTime 0 
-  return (aVal, bVal)
+  -- Run the "B" animation, with a reset time.
+  let s'' = s' & simTime .~ startSimTime
+  bVal <- liftIO $ runSequence s'' b
+  let s''' = grabState bVal
+  let bTime = s''' ^. simTime
+
+  -- Test to see if we need to yield.
+  let elapsedTime = min aTime bTime
+  lift $ put (s''' & simTime .~ elapsedTime)
+  outOfTime <- decrementSimTime 0
+  
+  -- If we were out of time, redo the operation.
+  newTime <- lift $ use simTime
+  if outOfTime then do
+    let time = newTime + startSimTime
+    lift $ put $ s & simTime .~ time
+    runParallel_ f a b
+  else do
+    combinePauses_ f newTime aVal bVal
+
+  where grabState (Left (Request s _)) = s
+        grabState (Right (_, s)) = s
+
+combinePauses_ :: (a -> b ->  SequenceCommand c) -> Float -> SequencePause (a, TSC) -> SequencePause (b, TSC) -> SequenceCommand c
+combinePauses_ f _ (Right (a, _)) (Right (b, _)) = f a b
+combinePauses_ f d (Right (a, _)) (Left (Request _ y)) = y d >>= f a . fst
+combinePauses_ f d (Left (Request _ x)) (Right (b, _)) = x d >>= (`f` b) . fst
+combinePauses_ f d (Left (Request _ x)) (Left (Request _ y)) = runParallel_ f (x d) (y d)

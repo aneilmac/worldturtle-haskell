@@ -34,4 +34,4 @@ main = runWorld $ do
     setSpeed 2000
     setRotationSpeed 0
     setVisible False
-    hilbert 6 90 6
+    hilbert 20 90 6

@@ -64,6 +64,7 @@ module Graphics.WorldTurtle.Commands
   , branch
   , setPenColor
   , setPenDown
+  , setPenUp
   , setPenSize
   , setRepresentation
   , setVisible
@@ -78,6 +79,7 @@ import Data.Maybe (fromMaybe)
 
 import Control.Lens
 import Control.Monad
+import Control.Monad.Trans.Class (lift)
 
 import Graphics.WorldTurtle.Shapes
 
@@ -126,10 +128,11 @@ makeTurtle' :: Point -- ^ Initial position of the turtle.
 makeTurtle' p f c = WorldCommand $ do 
   turtle <- generateTurtle
   let ts = turtLens_ turtle
-  ts . T.position       .= p
-  ts . T.heading        .= f
-  ts . T.representation .= turtleArrow black c
-  ts . T.penColor       .= c
+  lift $ do 
+    ts . T.position       .= p
+    ts . T.heading        .= f
+    ts . T.representation .= turtleArrow black c
+    ts . T.penColor       .= c
   return turtle
 
 -- | Move the turtle backward by the specified @distance@, in the direction the 
@@ -167,7 +170,7 @@ forward !d = seqToT $ \ turtle -> do
         addPicture $ color (t ^. T.penColor) 
                    $ thickLine startP midP (t ^. T.penSize)
         --  Draw line from startPoint to midPoint.
-      turtLens_ turtle . T.position .= midP
+      lift $ turtLens_ turtle . T.position .= midP
       --  Update the turtle to a new position
 
 -- | Shorthand for `forward`.
@@ -232,7 +235,7 @@ rotateTo_  !rightBias !r = seqToT $ \ turtle -> do
       let newHeading = P.normalizeHeading $ if rightBias then h - q * r'
                                                           else h + q * r'
       --  Get new heading via percentage
-      turtLens_ turtle . T.heading .= newHeading
+      lift $ turtLens_ turtle . T.heading .= newHeading
 
 -- | Draw a circle with a given @radius@. The center is @radius@ units left of 
 --   the @turtle@ if positive. Otherwise  @radius@ units right of the @turtle@ 
@@ -300,13 +303,14 @@ arc !radius !r = seqToT $ \turtle -> do
                                (t ^. T.penSize) (t ^. T.penColor)
 
     -- Update the turtle with the new values.
-    let ts = turtLens_ turtle
-    ts . T.heading .= P.normalizeHeading (if radius >= 0
+    lift $ do
+      let ts = turtLens_ turtle
+      ts . T.heading .= P.normalizeHeading (if radius >= 0
                                           then startAngle - 90 + angle
                                           else startAngle - 90 - angle)
 
-    let !p' = calculateNewPointC_ p radius startAngle angle
-    ts . T.position .= p'
+      let !p' = calculateNewPointC_ p radius startAngle angle
+      ts . T.position .= p'
 
 -- | Returns the turtle's current position.
 --   Default (starting) position is @(0, 0)@.
@@ -318,8 +322,9 @@ position = getter_ (0, 0) T.position
 home :: TurtleCommand ()
 home = seqToT $ \ turtle -> do
   let ts = turtLens_ turtle
-  ts . T.position       .= (0, 0)
-  ts . T.heading        .= 90
+  lift $ do 
+    ts . T.position       .= (0, 0)
+    ts . T.heading        .= 90
 
 -- | Warps the turtle to a new position.
 --   The turtle jumps to this new position with no animation. No line
@@ -331,7 +336,7 @@ home = seqToT $ \ turtle -> do
 jump :: P.Point -- ^ Position to warp to.
      -> TurtleCommand ()
 jump point = seqToT $ \ turtle -> do
-  turtLens_ turtle . T.position .= point
+  lift $ turtLens_ turtle . T.position .= point
 
 -- | Warps the turtle to a new position.
 --   The turtle jumps to this new position with no animation. If the pen is down
@@ -348,7 +353,7 @@ goto point = seqToT $ \ turtle -> do
   when (t ^. T.penDown) $ addPicture 
                         $ color (t ^. T.penColor) 
                         $ thickLine startP point (t ^. T.penSize)
-  turtLens_ turtle . T.position .= point
+  lift $ turtLens_ turtle . T.position .= point
 
 {-# DEPRECATED setPosition "Use `goto` instead." #-}
 -- | Deprecated. Alias of `goto`.
@@ -390,11 +395,15 @@ setPenColor = setter_ T.penColor
 penDown :: TurtleCommand Bool -- ^ True if pen is down, false if not.
 penDown = getter_ False T.penDown
 
--- | Sets the turtle's pen to down or up.
---   See `penDown`.
-setPenDown :: Bool -- ^ New state for pen flag. True for down. False for up.
-           -> TurtleCommand ()
-setPenDown = setter_ T.penDown
+-- | Sets the turtle's pen to down. Turtle will draw as it moves.
+--   See `penDown` and `setPenUp`.
+setPenDown :: TurtleCommand ()
+setPenDown = setter_ T.penDown True
+
+-- | Sets the turtle's pen to up. Turtle will not draw as it moves.
+--   See `penDown` and `setPenDown`.
+setPenUp :: TurtleCommand ()
+setPenUp = setter_ T.penDown False
 
 -- | Returns the turtle's pen size.
 --   Defaults to @2@.
@@ -470,7 +479,7 @@ setRepresentation = setter_ T.representation
 
 -- | Clears all drawings form the canvas. Does not alter any turtle's state.
 clear :: WorldCommand ()
-clear = WorldCommand $ pics .= mempty
+clear = WorldCommand $ lift $ pics .= mempty
 
 -- | Sleeps for a given amount of time in seconds. When sleeping no animation 
 --   runs. 
@@ -480,7 +489,7 @@ clear = WorldCommand $ pics .= mempty
 --   A negative value will be clamped to @0@.
 sleep :: Float  -- ^ Amount of time to sleep in seconds.
       -> WorldCommand ()
-sleep = WorldCommand . decrementSimTime . max 0
+sleep = WorldCommand . void . decrementSimTime . max 0
 
 -- | Turtle waits for a given amount of time in seconds. When sleeping turtle does not move. 
 -- 
@@ -489,7 +498,7 @@ sleep = WorldCommand . decrementSimTime . max 0
 --   A negative value will be clamped to @0@.
 wait :: Float -- ^ Amount of time to wait in seconds.
      -> TurtleCommand ()
-wait f = seqToT $ \ _ -> decrementSimTime $ max 0 f
+wait f = seqToT $ \ _ -> void . decrementSimTime $ max 0 f
 
 -- | Repeats the same command several times.
 --
@@ -510,7 +519,7 @@ branch :: TurtleCommand a -> TurtleCommand a
 branch (TurtleCommand p ) = seqToT $ \ turtle -> do
   !t <- tData_ turtle
   output <- seqW $ p turtle
-  turtLens_ turtle .= t
+  lift $ turtLens_ turtle .= t
   return output
 
 -- | @90@ degrees.
@@ -547,7 +556,7 @@ turtLens_ t = turtles . ix t
 -- | This is a helper function for our getter commands.
 --   It takes a default value, the lense to compose, and the turtle to inspect.
 getter_ :: a -> Lens' T.TurtleData a -> TurtleCommand a
-getter_ def l = seqToT $ \ t -> fromMaybe def <$> preuse (turtLens_ t . l)
+getter_ def l = seqToT $ \ t -> lift $ fromMaybe def <$> preuse (turtLens_ t . l)
 {-# INLINE getter_ #-}
 
 -- | This is a helper function that extracts the turtle data for a given turtle.
@@ -558,5 +567,5 @@ tData_ t = seqW $ seqT (getter_ T.defaultTurtle id) t
 -- | This is a helper function for our setter commands
 -- It takes a lens, the value to apply, and the turtle to modify.
 setter_ :: Lens' T.TurtleData b -> b -> TurtleCommand ()
-setter_ l val = seqToT $ \ t -> turtLens_ t . l .= val
+setter_ l val = seqToT $ \ t -> lift $ turtLens_ t . l .= val
 {-# INLINE setter_ #-}

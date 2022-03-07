@@ -1,7 +1,8 @@
 # Changelog for turtle-haskell
 
-## v0.2.3.0
+## v0.3.0.0
 
+* Upgraded to `lts-18.27`.
 * Added `runWorld'` and `runTurtle'` variant commands which take a background color.
 * Deprecated `setPosition`.
 * Added `jump`, which is a variant of `goto` which never draws a line.
@@ -10,7 +11,14 @@
 * Added `repeatFor` method which is an alias for `Control.Monad.replicateM_` (this is purely 
   to help ease students into Monad concepts.)
 * `TurtleCommand` and `WorldCommand` are now instances of `MonadIO`.
+* Major internal performance improvements. `SequenceCommand`, is now a `Coroutine`. 
+  This reduces wasted calculations per-frame as the state of the previous frame 
+  can now be carried into the next frame of animation.
+* Removed `WorldCommand` as an instance of `Control.Applicative` and `MonadPlus`. This did not
+  make sense in terms of parallelization. Introduced new `>!>` operator for parallel animations,
+  which is an alias for `bindM2` from `MonadParallel`.
 * Added the `labelwait-exe` test.
+* Removed `spaceleak-exe` test.
 
 ## v0.2.2.1
 

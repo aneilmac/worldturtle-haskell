@@ -8,10 +8,10 @@ import Graphics.WorldTurtle
 
 tree :: Float -> Float -> Float -> Int -> TurtleCommand ()
 tree size ratio angle iterations = do
-  setPenDown True
+  setPenDown
   setPenSize size
   forward s20
-  setPenDown False
+  setPenUp
  
   when (iterations > 0) $ do
     left angle
