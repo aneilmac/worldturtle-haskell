@@ -33,5 +33,5 @@ main = runWorld $ do
   t >/> do
     setSpeed 2000
     setRotationSpeed 0
-    setVisible False
+    setInvisible
     hilbert 6 90 6

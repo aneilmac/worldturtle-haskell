@@ -7,27 +7,26 @@ module Graphics.WorldTurtle.Internal.Commands
   ) where
 
 import Control.Applicative
-import Control.Monad
-
+import Control.Monad.IO.Class
 import Graphics.Gloss.Data.Picture (text)
+import Control.Monad.Parallel
 
 import Graphics.WorldTurtle.Internal.Sequence
+    ( Turtle, SequenceCommand, addPicture, runParallel )
 
 {- | A `WorldCommand` represents an instruction that affects the entire 
      animation canvas.
     
-    This could be as simple as "make a turtle" or more complicated like 
+    This could be as simple as "make a turtle" or more complicated, such as 
     "run these 5 turtles in parallel."
 
-    Like `TurtleCommand`s, `WorldCommand`s can be executed in order by 
+    Like `TurtleCommand`s, `WorldCommand`s can be executed in sequence by 
     combining commands in order using the monadic operator `(>>)`.
 
-    To execute a `TurtleCommand` in a `WorldCommand`, use either the 
-    `Graphics.WorldTurtle.run` function or the 
-    `Graphics.WorldTurtle.>/>` operator.
+    To execute a `TurtleCommand` within a `WorldCommand`, use the 
+    `Graphics.WorldTurtle.run` function or  `Graphics.WorldTurtle.>/>` operator.
 
-    For how to achieve parallel animations
-    see "Graphics.WorldTurtle#parallel".
+    For parallel animations, see `Graphics.WorldTurtle.>!>`.
 -}
 newtype WorldCommand a = WorldCommand 
   { 
@@ -44,20 +43,14 @@ instance Applicative WorldCommand where
 instance Monad WorldCommand where
   (WorldCommand a) >>= f = WorldCommand $! a >>= \s -> seqW $! f s
 
-instance Alternative WorldCommand where
-  empty = WorldCommand empty
-  (<|>) (WorldCommand a) (WorldCommand b) = 
-    WorldCommand $! alternateSequence a b
+instance MonadParallel WorldCommand where
+  bindM2 f (WorldCommand a) (WorldCommand b) = WorldCommand $ runParallel (\x y -> seqW (f x y)) a b
 
-instance Semigroup a => Semigroup (WorldCommand a) where
-  (WorldCommand a) <> (WorldCommand b) = 
-    WorldCommand $! combineSequence a b
-
-instance MonadPlus WorldCommand
+instance MonadIO WorldCommand where
+  liftIO a = WorldCommand $ liftIO a
 
 instance MonadFail WorldCommand where
   fail t = WorldCommand $! addPicture (text t) >> fail t
-
 
 {-| A `TurtleCommand` represents an instruction to execute on a turtle.
     It could be as simple as "draw a line" or more complicated like 
@@ -100,6 +93,9 @@ instance Monad TurtleCommand where
 
 instance MonadFail TurtleCommand where
   fail t = TurtleCommand $ \ _ -> fail t
+
+instance MonadIO TurtleCommand where
+  liftIO a = TurtleCommand $ \ _ -> liftIO a
 
 -- | `run` takes a `TurtleCommand` and a `Turtle` to execute the command on. 
 --  The result of the computation is returned wrapped in a `WorldCommand`.

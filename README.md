@@ -18,12 +18,11 @@ Turtle commands are monads!
 The following snippet produces a square:
 
 ```haskell
-import Control.Monad (replicateM_)
 import Graphics.WorldTurtle
 
 main :: IO ()
 main = runTurtle $
-  replicateM_ 4 $ do
+  repeatFor 4 $ do
     forward 90
     right 90
 ```
@@ -34,7 +33,7 @@ Like so!
  
 ### Parallel animations
 
-Use of the Alternative operator `(<|>)` allows animations to run in
+Use of the parallel animation operator `(>!>)` allows animations to run in
 parallel. The
   [parallel/serial comparison](worldturtle-examples/parallelserialcomparison/Main.hs)
 example shows that when given this code:
@@ -53,7 +52,7 @@ main = runWorld $ do
   clear
 
   -- Draw the anticlockwise and clockwise circles in parallel.
-  (turtle1 >/> circle 90) <|> (turtle2 >/> circle (-90))
+  (turtle1 >/> circle 90) >!> (turtle2 >/> circle (-90))
 ```
 
 We get this animation:

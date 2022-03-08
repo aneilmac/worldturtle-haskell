@@ -24,7 +24,7 @@ main = do
     s <- makeHand green  secsRadius  secsInMinute $ secsToDeg localTime
     m <- makeHand orange minsRadius  secsInHour   $ minsToDeg localTime
     h <- makeHand red    hoursRadius secsInDay    $ hoursToDeg localTime
-    moveHand secsRadius s <|> moveHand minsRadius m <|> moveHand hoursRadius h
+    moveHand secsRadius s >!> moveHand minsRadius m >!> moveHand hoursRadius h
 
 moveHand :: Float -> Turtle -> WorldCommand ()
 moveHand radius = run $ forever $ circle (-radius)
@@ -36,7 +36,7 @@ makeHand c radius time offset = do
     setRepresentation $ G.color c $ G.pictures [ G.line [(0, 0), (0, -radius)]
                                                , G.circleSolid 10
                                                ]
-    setPenDown False
+    setPenUp
     setSpeed 0 -- Instant draw
     arc (-radius) offset -- Catch the hand up to where it should be.
     setSpeed (pi * 2 * radius / time)
@@ -48,12 +48,12 @@ drawFace = do
   t >/> do
     setSpeed 0 -- Instant draw
     setRotationSpeed 0 -- Instant draw
-    setVisible False
-    setPenDown False
+    setInvisible
+    setPenUp
     forM_ ([0,5..355] :: [Int]) $ \time -> do
       branch $ do
         left 90
-        setPenDown True
+        setPenDown
         let l = if time `mod` 15 == 0 then 20 else 10
         forward l
       arc clockRadius 5

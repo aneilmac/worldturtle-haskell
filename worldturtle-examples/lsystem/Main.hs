@@ -17,7 +17,7 @@ tree = f
 
 main :: IO ()
 main = runTurtle $ do
-  setVisible False
+  setInvisible
   setRotationSpeed 0
   setSpeed 500
   tree 6
