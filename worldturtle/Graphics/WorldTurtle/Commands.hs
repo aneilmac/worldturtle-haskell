@@ -39,7 +39,6 @@ module Graphics.WorldTurtle.Commands
   , Graphics.WorldTurtle.Commands.arc
   , jump
   , goto
-  , setPosition
   , home
   , setHeading
   , setSpeed
@@ -231,11 +230,14 @@ rotateTo_ :: Bool -- ^ Bias decides in which direction rotation happens.
           -> TurtleCommand ()
 rotateTo_  !rightBias !r = seqToT $ \ turtle -> do
     !t <- tData_ turtle
-    let !r' = P.normalizeHeading r
-    animate' (P.degToRad r') (t ^. T.rotationSpeed) $ \q -> do
+    let !r' = P.normalizeHeading (abs r)
+    let rotSpeed = t ^. T.rotationSpeed
+    animate' r' rotSpeed $ \q -> do
       let h = t ^. T.heading
-      let newHeading = P.normalizeHeading $ if rightBias then h - q * r'
-                                                          else h + q * r'
+      let bias = if rightBias then -1 else 1
+      let bias' = bias * signum rotSpeed
+      let bias'' = bias' * signum r
+      let newHeading = P.normalizeHeading $ h + (q * r') * bias''
       --  Get new heading via percentage
       lift $ turtLens_ turtle . T.heading .= newHeading
 
@@ -343,7 +345,7 @@ jump point = seqToT $ \ turtle -> do
 
 -- | Sets the turtle's position to the new given value.
 --
---   This command does not animate. A line will be drawn between
+--   This command will animate. A line will be drawn between
 --   the turtle's old position and the new set position if the turtle's
 --   pen is down.
 --
@@ -352,18 +354,21 @@ jump point = seqToT $ \ turtle -> do
 --   This command does not affect the turtle's heading.
 goto :: P.Point -- ^ Position to warp to.
      -> TurtleCommand ()
-goto point = seqToT $ \ turtle -> do
+goto !point = seqToT $ \ turtle -> do
   !t <- tData_ turtle
-  let !startP = t ^. T.position
-  when (t ^. T.penDown) $ addPicture 
-                        $ color (t ^. T.penColor) 
-                        $ thickLine startP point (t ^. T.penSize)
-  lift $ turtLens_ turtle . T.position .= point
-
-{-# DEPRECATED setPosition "Use `goto` instead." #-}
--- | Alias of `goto`.
-setPosition :: P.Point -> TurtleCommand ()
-setPosition = goto
+  let d = P.magV $ t ^. T.position P.- point
+  --  Get origin point
+  animate' d (t ^. T.speed) $ \ q -> do
+    --  Get new endpoint via percentage
+    let !startP = t ^. T.position
+    let !midP = P.lerp q startP point
+      -- don't draw if pen isn't in down state
+    when (t ^. T.penDown) $
+      addPicture $ color (t ^. T.penColor) 
+                 $ thickLine startP midP (t ^. T.penSize)
+      --  Draw line from startPoint to midPoint.
+    lift $ turtLens_ turtle . T.position .= midP
+    --  Update the turtle to a new position
 
 -- | Returns the turtle's heading.
 --   
@@ -460,7 +465,7 @@ setSpeed = setter_ T.speed
 --   Rotation speed is is the speed in seconds it takes to do a full revolution.
 --   A speed of @0@ is equivalent to no animation being performed and instant 
 --   rotation.
--- The default value is @20@.
+-- The default value is @720@.
 rotationSpeed :: TurtleCommand Float -- ^ Rotation speed of turtle.
 rotationSpeed = getter_ 0 T.rotationSpeed
 

@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:           worldturtle
-version:        0.3.0.0
+version:        0.3.1.0
 synopsis:       LOGO-like Turtle graphics with a monadic interface.
 category:       teaching
 homepage:       https://github.com/aneilmac/worldturtle-haskell#readme

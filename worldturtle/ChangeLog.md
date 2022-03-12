@@ -1,5 +1,15 @@
 # Changelog for turtle-haskell
 
+## v0.3.1.0
+
+* Fixed longstanding bug where turtle rotation did not 
+  rotate at the advertised rate.
+* Fixed longstanding bug where rotation did not accept negative
+  values gracefully.
+* Tweaked intial turtle rotation speed to 720 degrees/sec.
+* `goto` command now animates a transition.
+* Removed `setPosition` function.
+
 ## v0.3.0.0
 
 * Upgraded to `lts-18.27`.
