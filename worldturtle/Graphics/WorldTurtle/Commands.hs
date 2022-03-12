@@ -236,7 +236,8 @@ rotateTo_  !rightBias !r = seqToT $ \ turtle -> do
       let h = t ^. T.heading
       let bias = if rightBias then 1 else -1
       let bias' = bias * signum rotSpeed
-      let newHeading = P.normalizeHeading $ h + (q * r') * bias'
+      let bias'' = bias' * signum r
+      let newHeading = P.normalizeHeading $ h + (q * r') * bias''
       --  Get new heading via percentage
       lift $ turtLens_ turtle . T.heading .= newHeading
 
