@@ -231,10 +231,12 @@ rotateTo_ :: Bool -- ^ Bias decides in which direction rotation happens.
 rotateTo_  !rightBias !r = seqToT $ \ turtle -> do
     !t <- tData_ turtle
     let !r' = P.normalizeHeading r
-    let h = t ^. T.heading
-    animate' r' (t ^. T.rotationSpeed) $ \q -> do
-      let newHeading = P.normalizeHeading $ if rightBias then h - q * r'
-                                                         else h + q * r'
+    let rotSpeed = t ^. T.rotationSpeed
+    animate' r' rotSpeed $ \q -> do
+      let h = t ^. T.heading
+      let bias = if rightBias then 1 else -1
+      let bias' = bias * signum rotSpeed
+      let newHeading = P.normalizeHeading $ h + (q * r') * bias'
       --  Get new heading via percentage
       lift $ turtLens_ turtle . T.heading .= newHeading
 
