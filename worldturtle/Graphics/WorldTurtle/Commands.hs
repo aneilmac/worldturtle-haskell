@@ -462,7 +462,7 @@ setSpeed = setter_ T.speed
 --   Rotation speed is is the speed in seconds it takes to do a full revolution.
 --   A speed of @0@ is equivalent to no animation being performed and instant 
 --   rotation.
--- The default value is @20@.
+-- The default value is @720@.
 rotationSpeed :: TurtleCommand Float -- ^ Rotation speed of turtle.
 rotationSpeed = getter_ 0 T.rotationSpeed
 
