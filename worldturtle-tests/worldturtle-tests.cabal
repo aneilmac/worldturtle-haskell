@@ -1,7 +1,7 @@
 cabal-version: 3.0
 
 name:           worldturtle-tests
-version:        0.3.0.0
+version:        0.3.1.0
 description:    Tests using the worldturtle library
 category:       teaching
 homepage:       https://github.com/aneilmac/worldturtle-haskell#readme
@@ -33,6 +33,21 @@ executable drawtriangle-exe
 executable labelwait-exe
   main-is: Main.hs
   hs-source-dirs: labelwait
+  build-depends:
+      base
+    , gloss
+    , worldturtle
+    , transformers
+  default-language: Haskell2010
+  ghc-options:
+    -O2
+    -Wall
+    -threaded
+    -rtsopts
+
+executable heading-exe
+  main-is: Main.hs
+  hs-source-dirs: heading
   build-depends:
       base
     , gloss
