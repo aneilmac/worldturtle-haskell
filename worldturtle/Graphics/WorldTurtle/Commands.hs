@@ -230,7 +230,7 @@ rotateTo_ :: Bool -- ^ Bias decides in which direction rotation happens.
           -> TurtleCommand ()
 rotateTo_  !rightBias !r = seqToT $ \ turtle -> do
     !t <- tData_ turtle
-    let !r' = P.normalizeHeading r
+    let !r' = P.normalizeHeading (abs r)
     let rotSpeed = t ^. T.rotationSpeed
     animate' r' rotSpeed $ \q -> do
       let h = t ^. T.heading
