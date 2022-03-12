@@ -234,7 +234,7 @@ rotateTo_  !rightBias !r = seqToT $ \ turtle -> do
     let rotSpeed = t ^. T.rotationSpeed
     animate' r' rotSpeed $ \q -> do
       let h = t ^. T.heading
-      let bias = if rightBias then 1 else -1
+      let bias = if rightBias then -1 else 1
       let bias' = bias * signum rotSpeed
       let bias'' = bias' * signum r
       let newHeading = P.normalizeHeading $ h + (q * r') * bias''
