@@ -4,7 +4,7 @@
 
 * Fixed longstanding bug where turtle rotation did not 
   rotate at the advertised rate.
-* Tweaked intial turtle rotation speed to 720 degrees/sec (from 10 radians/sec).
+* Tweaked intial turtle rotation speed to 720 degrees/sec.
 * `goto` command now animates a transition.
 * Removed `setPosition` function.
 
