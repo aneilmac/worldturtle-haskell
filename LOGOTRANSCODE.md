@@ -1,4 +1,4 @@
-# Transcoding Logo to WorldTurtle
+# Transcoding LOGO to WorldTurtle
 
 ## Coordinate systems
 
