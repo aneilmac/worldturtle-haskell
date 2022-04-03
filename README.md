@@ -7,7 +7,7 @@ WorldTurtle is a Haskell take on [Turtle Graphics][Turtle graphics wiki].
 The intent of this module is a teaching tool by using turtle commands to
 produce animations.
 
-![parallel cirlces animation](worldturtle/docs/images/parallel_circles_animated.gif)
+![parallel circles animation](worldturtle/docs/images/parallel_circles_animated.gif)
 
 ## Features
 
@@ -78,7 +78,7 @@ For all examples, look [here](worldturtle-examples)!
 
 ### [spiralstar](worldturtle-examples/spiralstar/Main.hs) example
 
-![sprialstar animation](worldturtle-examples/spiralstar/output.gif)
+![spiralstar animation](worldturtle-examples/spiralstar/output.gif)
 
 ### [spiralsquare](worldturtle-examples/spiralsquare/Main.hs) example
 
@@ -142,3 +142,7 @@ stack exec parallelcircles-exe
 [Hackage page]: https://hackage.haskell.org/package/worldturtle
 [Hackage badge]: https://img.shields.io/hackage/v/worldturtle
 [Turtle graphics wiki]: https://en.wikipedia.org/wiki/Turtle_graphics
+
+## Transcoding from LOGO to WorldTurtle
+
+See [here](LOGOTRANSCODE.md) for a detailed description on porting LOGO code to WorldTurtle.
